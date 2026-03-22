@@ -1,5 +1,6 @@
 import cors from 'cors';
 import express from 'express';
+import { fileURLToPath } from 'node:url';
 
 import { issueToken, requireAuth } from './auth.js';
 import { config } from './config.js';
@@ -9,13 +10,50 @@ import { hashPassword, verifyPassword } from './password.js';
 
 const app = express();
 const marketSubscribers = new Set();
+const adminDir = fileURLToPath(new URL('../public/admin', import.meta.url));
+const adminIndexFile = fileURLToPath(new URL('../public/admin/index.html', import.meta.url));
 
 app.use(cors({ origin: config.corsOrigin === '*' ? true : config.corsOrigin }));
 app.use(express.json());
+app.use('/admin', express.static(adminDir));
 
 const logAuth = (event, details = {}) => {
   console.log(`[auth] ${event}`, details);
 };
+
+const requireAdmin = (req, res, next) => {
+  if (!config.adminSecret) {
+    res.status(503).json({ error: 'Admin access is not configured.' });
+    return;
+  }
+
+  const secret = req.headers['x-admin-secret'];
+
+  if (typeof secret !== 'string' || secret !== config.adminSecret) {
+    res.status(401).json({ error: 'Invalid admin secret.' });
+    return;
+  }
+
+  next();
+};
+
+const serializeUser = (row) => ({
+  id: row.id,
+  loginId: row.login_id,
+  username: row.username,
+  balance: Number(row.balance),
+  createdAt: row.created_at,
+  updatedAt: row.updated_at,
+});
+
+const serializeTransaction = (row) => ({
+  id: row.id,
+  kind: row.kind,
+  amountDelta: Number(row.amount_delta),
+  balanceAfter: Number(row.balance_after),
+  note: row.note,
+  createdAt: row.created_at,
+});
 
 const publishMarket = (market) => {
   const payload = `event: market\ndata: ${JSON.stringify(market)}\n\n`;
@@ -23,6 +61,10 @@ const publishMarket = (market) => {
     subscriber.write(payload);
   }
 };
+
+app.get('/admin', (_req, res) => {
+  res.sendFile(adminIndexFile);
+});
 
 app.get('/health', async (_req, res) => {
   const db = await pool.query('select now() as now');
@@ -191,6 +233,134 @@ app.get('/me', requireAuth, async (req, res) => {
   });
 });
 
+app.get('/admin/users/search', requireAdmin, async (req, res) => {
+  const query = String(req.query.q ?? '').trim().toLowerCase();
+
+  if (query.length < 2) {
+    res.status(400).json({ error: 'Search query must be at least 2 characters.' });
+    return;
+  }
+
+  const result = await pool.query(
+    `select id, login_id, username, balance, created_at, updated_at
+     from app_users
+     where login_id like $1 or username like $1
+     order by updated_at desc
+     limit 20`,
+    [`%${query}%`],
+  );
+
+  res.json({
+    players: result.rows.map(serializeUser),
+  });
+});
+
+app.get('/admin/users/:userId', requireAdmin, async (req, res) => {
+  const userResult = await pool.query(
+    `select id, login_id, username, balance, created_at, updated_at
+     from app_users
+     where id = $1`,
+    [req.params.userId],
+  );
+  const user = userResult.rows[0];
+
+  if (!user) {
+    res.status(404).json({ error: 'Player not found.' });
+    return;
+  }
+
+  const [transactionResult, betsResult] = await Promise.all([
+    pool.query(
+      `select id, kind, amount_delta, balance_after, note, created_at
+       from wallet_transactions
+       where user_id = $1
+       order by created_at desc
+       limit 12`,
+      [user.id],
+    ),
+    pool.query(
+      `select id, side, amount, market_slug, created_at
+       from bets
+       where user_id = $1
+       order by created_at desc
+       limit 12`,
+      [user.id],
+    ),
+  ]);
+
+  res.json({
+    player: serializeUser(user),
+    recentTransactions: transactionResult.rows.map(serializeTransaction),
+    recentBets: betsResult.rows.map((row) => ({
+      id: row.id,
+      side: row.side,
+      amount: Number(row.amount),
+      marketSlug: row.market_slug,
+      createdAt: row.created_at,
+    })),
+  });
+});
+
+app.post('/admin/users/:userId/balance', requireAdmin, async (req, res) => {
+  const nextBalance = Number(req.body.balance);
+  const noteInput = String(req.body.note ?? '').trim();
+  const note = noteInput || 'Admin balance update';
+
+  if (!Number.isFinite(nextBalance) || nextBalance < 0) {
+    res.status(400).json({ error: 'Balance must be a non-negative number.' });
+    return;
+  }
+
+  try {
+    const result = await withTransaction(async (client) => {
+      const userResult = await client.query(
+        `select id, login_id, username, balance, created_at, updated_at
+         from app_users
+         where id = $1
+         for update`,
+        [req.params.userId],
+      );
+      const user = userResult.rows[0];
+
+      if (!user) {
+        throw new Error('USER_NOT_FOUND');
+      }
+
+      const currentBalance = Number(user.balance);
+      const delta = Number((nextBalance - currentBalance).toFixed(2));
+
+      const updatedUserResult = await client.query(
+        `update app_users
+         set balance = $2, updated_at = now()
+         where id = $1
+         returning id, login_id, username, balance, created_at, updated_at`,
+        [user.id, nextBalance],
+      );
+
+      const transactionResult = await client.query(
+        `insert into wallet_transactions (user_id, kind, amount_delta, balance_after, note)
+         values ($1, 'admin_adjustment', $2, $3, $4)
+         returning id, kind, amount_delta, balance_after, note, created_at`,
+        [user.id, delta, nextBalance, note],
+      );
+
+      return {
+        player: serializeUser(updatedUserResult.rows[0]),
+        transaction: serializeTransaction(transactionResult.rows[0]),
+      };
+    });
+
+    res.json(result);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'USER_NOT_FOUND') {
+      res.status(404).json({ error: 'Player not found.' });
+      return;
+    }
+
+    res.status(500).json({ error: 'Failed to update balance.' });
+  }
+});
+
 app.post('/bets', requireAuth, async (req, res) => {
   const side = req.body.side;
   const amount = Number(req.body.amount);
@@ -258,8 +428,6 @@ app.post('/bets', requireAuth, async (req, res) => {
     });
 
     publishMarket(result.market);
-
-    logAuth('signup_success', { loginId, userId: result.id });
 
     res.status(201).json({
       bet: {

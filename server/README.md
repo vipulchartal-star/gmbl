@@ -15,7 +15,8 @@ Node + Postgres backend for the betting app.
 2. Create a Postgres database.
 3. Run `server/sql/schema.sql` against that database.
 4. Install dependencies with `npm install` inside `server`.
-5. Start with `npm start`.
+5. Set `ADMIN_SECRET` if you want the admin panel enabled.
+6. Start with `npm start`.
 
 ## API
 
@@ -27,20 +28,29 @@ Node + Postgres backend for the betting app.
 - `GET /me`
 - `POST /bets`
 - `GET /bets/me`
+- `GET /admin`
+- `GET /admin/users/search?q=<login>`
+- `GET /admin/users/:userId`
+- `POST /admin/users/:userId/balance`
 
 ## Deploying to Render
 
 1. Push this repo to Git.
 2. In Render, create a Blueprint from `render.yaml`.
 3. After the Postgres database is created, run `server/sql/schema.sql` in that database.
-4. Deploy the `gmbl-api` service.
+4. Set `ADMIN_SECRET` on the `gmbl-api` service.
+5. Deploy the `gmbl-api` service.
+
+## Admin Panel
+
+Set `ADMIN_SECRET` on the server, then open `/admin` in a browser. The panel stores the secret in session storage for that browser tab, lets you search players by login id or username, shows current balance and recent activity, and records an `admin_adjustment` wallet transaction whenever you submit a new balance.
 
 ## Important
 
 This is much safer than the Firebase-client-only version, but it is still not literally hack-proof. You still need:
 
 - rate limiting
-- admin authorization
+- stronger admin authorization than a shared secret
 - market settlement logic
 - HTTPS in production
 - proper secret rotation
