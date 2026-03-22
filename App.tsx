@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, SafeAreaView, ScrollView } from 'react-native';
+import { Alert, Platform, SafeAreaView, ScrollView } from 'react-native';
 
 import { AccountCard, BetCard, MarketCard, ScreenHeader, WarningCard } from './src/appComponents';
 import { styles } from './src/appStyles';
@@ -20,6 +20,32 @@ import {
 } from './src/appTypes';
 import { createGeneratedCredentials, downloadTextFile, parseCredentialText, readCredentialFile } from './src/credentials';
 import { apiConfig, ApiError, apiRequest } from './src/api';
+
+const sessionStorage = {
+  getItem: async (key: string) => {
+    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+      return localStorage.getItem(key);
+    }
+
+    return SecureStore.getItemAsync(key);
+  },
+  setItem: async (key: string, value: string) => {
+    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+      localStorage.setItem(key, value);
+      return;
+    }
+
+    await SecureStore.setItemAsync(key, value);
+  },
+  removeItem: async (key: string) => {
+    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
+      localStorage.removeItem(key);
+      return;
+    }
+
+    await SecureStore.deleteItemAsync(key);
+  },
+};
 
 export default function App() {
   const [market, setMarket] = useState<Market>(emptyMarket);
@@ -46,12 +72,12 @@ export default function App() {
 
   const persistSession = async (nextSession: SessionState | null) => {
     if (nextSession) {
-      await SecureStore.setItemAsync(sessionKey, JSON.stringify(nextSession));
+      await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
       setSession(nextSession);
       return;
     }
 
-    await SecureStore.deleteItemAsync(sessionKey);
+    await sessionStorage.removeItem(sessionKey);
     setSession(null);
   };
 
@@ -73,7 +99,7 @@ export default function App() {
 
     const restoreSession = async () => {
       try {
-        const rawSession = await SecureStore.getItemAsync(sessionKey);
+        const rawSession = await sessionStorage.getItem(sessionKey);
 
         if (!rawSession) {
           return;
@@ -86,7 +112,7 @@ export default function App() {
           setSession({ token: parsed.token, user: response.user });
         }
       } catch {
-        await SecureStore.deleteItemAsync(sessionKey);
+        await sessionStorage.removeItem(sessionKey);
       } finally {
         if (isMounted) {
           setSessionLoading(false);
