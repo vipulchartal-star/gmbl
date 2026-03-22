@@ -1,0 +1,247 @@
+import { StyleSheet } from 'react-native';
+
+export const styles = StyleSheet.create({
+  safeArea: {
+    flex: 1,
+    backgroundColor: '#08111f',
+  },
+  screen: {
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+    gap: 18,
+  },
+  eyebrow: {
+    color: '#f97316',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 1.8,
+    textTransform: 'uppercase',
+  },
+  title: {
+    color: '#f8fafc',
+    fontSize: 40,
+    fontWeight: '800',
+  },
+  subtitle: {
+    color: '#cbd5e1',
+    fontSize: 15,
+    lineHeight: 22,
+  },
+  card: {
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
+    borderRadius: 24,
+    borderWidth: 1,
+    padding: 18,
+    gap: 14,
+  },
+  sectionLabel: {
+    color: '#e2e8f0',
+    fontSize: 13,
+    fontWeight: '700',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  input: {
+    backgroundColor: '#111827',
+    borderColor: '#334155',
+    borderRadius: 16,
+    borderWidth: 1,
+    color: '#f8fafc',
+    fontSize: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  primaryButton: {
+    alignItems: 'center',
+    backgroundColor: '#f97316',
+    borderRadius: 14,
+    paddingVertical: 12,
+  },
+  primaryButtonText: {
+    color: '#fff7ed',
+    fontSize: 15,
+    fontWeight: '800',
+  },
+  secondaryButton: {
+    alignItems: 'center',
+    backgroundColor: '#1d4ed8',
+    borderRadius: 14,
+    paddingVertical: 12,
+  },
+  secondaryButtonText: {
+    color: '#eff6ff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  secondaryGhostButton: {
+    alignItems: 'center',
+    borderColor: '#334155',
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 12,
+  },
+  secondaryGhostButtonText: {
+    color: '#cbd5e1',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  question: {
+    color: '#f8fafc',
+    fontSize: 24,
+    fontWeight: '800',
+    lineHeight: 30,
+  },
+  ratioRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  ratioPanel: {
+    flex: 1,
+    backgroundColor: '#111827',
+    borderRadius: 18,
+    padding: 14,
+    gap: 10,
+  },
+  ratioLabel: {
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  ratioValue: {
+    color: '#f8fafc',
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  meterTrack: {
+    backgroundColor: '#1e293b',
+    borderRadius: 999,
+    height: 10,
+    overflow: 'hidden',
+  },
+  meterFill: {
+    borderRadius: 999,
+    height: '100%',
+  },
+  poolText: {
+    color: '#cbd5e1',
+    fontSize: 14,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  statBox: {
+    flex: 1,
+    backgroundColor: '#111827',
+    borderRadius: 16,
+    padding: 12,
+  },
+  statLabel: {
+    color: '#94a3b8',
+    fontSize: 12,
+    marginBottom: 6,
+    textTransform: 'uppercase',
+  },
+  statValue: {
+    color: '#f8fafc',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  chip: {
+    backgroundColor: '#1e293b',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  chipText: {
+    color: '#e2e8f0',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  betRow: {
+    flexDirection: 'row',
+    gap: 12,
+  },
+  betButton: {
+    alignItems: 'center',
+    borderRadius: 18,
+    flex: 1,
+    paddingVertical: 16,
+  },
+  betButtonText: {
+    color: '#f8fafc',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  warningCard: {
+    backgroundColor: '#3f1d16',
+    borderColor: '#fb923c',
+    borderRadius: 20,
+    borderWidth: 1,
+    padding: 16,
+    gap: 8,
+  },
+  warningTitle: {
+    color: '#ffedd5',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  warningText: {
+    color: '#fed7aa',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  loadingWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 12,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  toggleButton: {
+    flex: 1,
+    borderColor: '#334155',
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 12,
+  },
+  toggleButtonActive: {
+    backgroundColor: '#1e293b',
+    borderColor: '#f97316',
+  },
+  toggleText: {
+    color: '#94a3b8',
+    fontSize: 14,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  toggleTextActive: {
+    color: '#f8fafc',
+  },
+  accountRow: {
+    gap: 4,
+  },
+  accountName: {
+    color: '#f8fafc',
+    fontSize: 24,
+    fontWeight: '800',
+  },
+  accountMeta: {
+    color: '#f97316',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  accountHint: {
+    color: '#94a3b8',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+});
