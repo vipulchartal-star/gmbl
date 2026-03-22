@@ -28,7 +28,7 @@ export default function App() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [submitting, setSubmitting] = useState<BetSide | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
-  const [authMode, setAuthMode] = useState<AuthMode>('signup');
+  const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [loginId, setLoginId] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');

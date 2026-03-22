@@ -11,12 +11,14 @@ type HeaderProps = {
 export function ScreenHeader({ authMode, session }: HeaderProps) {
   return (
     <>
-      <Text style={styles.eyebrow}>{session ? 'Realtime Betting' : 'Account Access'}</Text>
-      <Text style={styles.title}>{session ? 'GMBL' : authMode === 'signup' ? 'Create Account' : 'Login'}</Text>
+      <Text style={styles.eyebrow}>{session ? 'Realtime Betting' : 'Login'}</Text>
+      <Text style={styles.title}>{session ? 'GMBL' : authMode === 'signup' ? 'Create Account' : 'Welcome Back'}</Text>
       <Text style={styles.subtitle}>
         {session
           ? 'Place bets after you sign in.'
-          : 'Sign in first. After login, the market and bet controls will appear.'}
+          : authMode === 'signup'
+            ? 'Create your account first, then the market will appear after login.'
+            : 'Enter your login id and password. The betting market appears after login.'}
       </Text>
     </>
   );
@@ -61,9 +63,11 @@ export function AccountCard({
   sessionLoading,
   username,
 }: AccountCardProps) {
+  const isSignup = authMode === 'signup';
+
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionLabel}>{session ? 'Account' : 'Login'}</Text>
+      <Text style={styles.sectionLabel}>{session ? 'Account' : isSignup ? 'Create Account' : 'Login'}</Text>
       {sessionLoading ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="small" color="#f97316" />
@@ -84,10 +88,6 @@ export function AccountCard({
         </>
       ) : (
         <>
-          <View style={styles.toggleRow}>
-            <AuthToggle active={authMode === 'signup'} label="Create" onPress={onSignupMode} />
-            <AuthToggle active={authMode === 'login'} label="Login" onPress={onLoginMode} />
-          </View>
           <TextInput
             autoCapitalize="none"
             value={loginId}
@@ -96,11 +96,11 @@ export function AccountCard({
             placeholderTextColor="#6b7280"
             style={styles.input}
           />
-          {authMode === 'signup' ? (
+          {isSignup ? (
             <TextInput
               value={username}
               onChangeText={onChangeUsername}
-              placeholder="anonymous username"
+              placeholder="username"
               placeholderTextColor="#6b7280"
               style={styles.input}
             />
@@ -115,21 +115,29 @@ export function AccountCard({
           />
           <Pressable style={styles.primaryButton} disabled={authBusy} onPress={onSubmit}>
             <Text style={styles.primaryButtonText}>
-              {authBusy ? 'Working...' : authMode === 'signup' ? 'Create Account' : 'Login'}
+              {authBusy ? 'Working...' : isSignup ? 'Create Account' : 'Login'}
             </Text>
           </Pressable>
-          <Pressable style={styles.secondaryGhostButton} disabled={authBusy} onPress={onGenerateCredentials}>
-            <Text style={styles.secondaryGhostButtonText}>Generate Login</Text>
-          </Pressable>
-          <Text style={styles.accountHint}>
-            Generates signup credentials and downloads a text file on web.
-          </Text>
-          <Pressable style={styles.secondaryGhostButton} disabled={authBusy} onPress={onUploadLoginFile}>
-            <Text style={styles.secondaryGhostButtonText}>Upload Login File</Text>
-          </Pressable>
-          <Text style={styles.accountHint}>
-            Use the downloaded credential file to refill login details instantly on web.
-          </Text>
+
+          {isSignup ? (
+            <>
+              <Pressable onPress={onGenerateCredentials}>
+                <Text style={styles.textLink}>Generate credentials for me</Text>
+              </Pressable>
+              <Pressable onPress={onLoginMode}>
+                <Text style={styles.textLink}>Already have an account? Login</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
+              <Pressable onPress={onUploadLoginFile}>
+                <Text style={styles.textLink}>Use credential file</Text>
+              </Pressable>
+              <Pressable onPress={onSignupMode}>
+                <Text style={styles.textLink}>Need an account? Create one</Text>
+              </Pressable>
+            </>
+          )}
         </>
       )}
     </View>
@@ -254,14 +262,6 @@ function Stat({ label, value }: { label: string; value: string }) {
       <Text style={styles.statLabel}>{label}</Text>
       <Text style={styles.statValue}>{value}</Text>
     </View>
-  );
-}
-
-function AuthToggle({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={[styles.toggleButton, active ? styles.toggleButtonActive : null]}>
-      <Text style={[styles.toggleText, active ? styles.toggleTextActive : null]}>{label}</Text>
-    </Pressable>
   );
 }
 

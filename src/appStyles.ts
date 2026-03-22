@@ -244,4 +244,9 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  textLink: {
+    color: '#f97316',
+    fontSize: 14,
+    fontWeight: '700',
+  },
 });
