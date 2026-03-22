@@ -35,6 +35,14 @@ export const styles = StyleSheet.create({
     padding: 18,
     gap: 14,
   },
+  cardCompact: {
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
+    borderRadius: 22,
+    borderWidth: 1,
+    padding: 16,
+    gap: 12,
+  },
   sectionLabel: {
     color: '#e2e8f0',
     fontSize: 13,
@@ -51,6 +59,16 @@ export const styles = StyleSheet.create({
     fontSize: 16,
     paddingHorizontal: 14,
     paddingVertical: 14,
+  },
+  inputCompact: {
+    backgroundColor: '#111827',
+    borderColor: '#334155',
+    borderRadius: 14,
+    borderWidth: 1,
+    color: '#f8fafc',
+    fontSize: 16,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
   },
   primaryButton: {
     alignItems: 'center',
@@ -238,6 +256,41 @@ export const styles = StyleSheet.create({
     color: '#f97316',
     fontSize: 14,
     fontWeight: '700',
+  },
+  accountTopBar: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+  accountTopMeta: {
+    flex: 1,
+    gap: 3,
+  },
+  accountTag: {
+    color: '#f8fafc',
+    fontSize: 22,
+    fontWeight: '800',
+  },
+  accountBalance: {
+    color: '#cbd5e1',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  accountStatus: {
+    color: '#94a3b8',
+    fontSize: 13,
+  },
+  inlineLogoutButton: {
+    backgroundColor: '#1e293b',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+  },
+  inlineLogoutText: {
+    color: '#e2e8f0',
+    fontSize: 13,
+    fontWeight: '800',
   },
   accountHint: {
     color: '#94a3b8',

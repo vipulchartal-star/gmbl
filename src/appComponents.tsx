@@ -11,11 +11,11 @@ type HeaderProps = {
 export function ScreenHeader({ authMode, session }: HeaderProps) {
   return (
     <>
-      <Text style={styles.eyebrow}>{session ? 'Realtime Betting' : 'Login'}</Text>
+      <Text style={styles.eyebrow}>{session ? 'Live Bets' : 'Login'}</Text>
       <Text style={styles.title}>{session ? 'GMBL' : authMode === 'signup' ? 'Create Account' : 'Welcome Back'}</Text>
       <Text style={styles.subtitle}>
         {session
-          ? 'Place bets after you sign in.'
+          ? 'Track the market and place bets below.'
           : authMode === 'signup'
             ? 'Create your account with only login id and password.'
             : 'Enter your login id and password. The betting market appears after login.'}
@@ -63,25 +63,22 @@ export function AccountCard({
 
   return (
     <View style={styles.card}>
-      <Text style={styles.sectionLabel}>{session ? 'Account' : isSignup ? 'Create Account' : 'Login'}</Text>
+      <Text style={styles.sectionLabel}>{session ? 'Session' : isSignup ? 'Create Account' : 'Login'}</Text>
       {sessionLoading ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="small" color="#f97316" />
         </View>
       ) : session ? (
-        <>
-          <View style={styles.accountRow}>
-            <Text style={styles.accountName}>@{session.user.loginId}</Text>
-            <Text style={styles.accountMeta}>Signed in</Text>
+        <View style={styles.accountTopBar}>
+          <View style={styles.accountTopMeta}>
+            <Text style={styles.accountTag}>@{session.user.loginId}</Text>
+            <Text style={styles.accountBalance}>Balance {session.user.balance.toFixed(2)}</Text>
+            <Text style={styles.accountStatus}>Market {marketStatus}</Text>
           </View>
-          <View style={styles.statsRow}>
-            <Stat label="Balance" value={session.user.balance.toFixed(2)} />
-            <Stat label="Market" value={marketStatus} />
-          </View>
-          <Pressable style={styles.secondaryButton} onPress={onLogout}>
-            <Text style={styles.secondaryButtonText}>Log Out</Text>
+          <Pressable style={styles.inlineLogoutButton} onPress={onLogout}>
+            <Text style={styles.inlineLogoutText}>Log Out</Text>
           </Pressable>
-        </>
+        </View>
       ) : (
         <>
           <TextInput
@@ -142,7 +139,7 @@ type MarketCardProps = {
 
 export function MarketCard({ liveRatio, market, marketLoading, noShare, totalPool, yesShare }: MarketCardProps) {
   return (
-    <View style={styles.card}>
+    <View style={styles.cardCompact}>
       <Text style={styles.sectionLabel}>Live Market</Text>
       <Text style={styles.question}>{market.question}</Text>
       {marketLoading ? (
@@ -176,7 +173,7 @@ type BetCardProps = {
 
 export function BetCard({ betAmount, onChangeBetAmount, onPlaceNo, onPlaceYes, submitting }: BetCardProps) {
   return (
-    <View style={styles.card}>
+    <View style={styles.cardCompact}>
       <Text style={styles.sectionLabel}>Bet Amount</Text>
       <TextInput
         keyboardType="numeric"
@@ -184,7 +181,7 @@ export function BetCard({ betAmount, onChangeBetAmount, onPlaceNo, onPlaceYes, s
         onChangeText={onChangeBetAmount}
         placeholder="10"
         placeholderTextColor="#6b7280"
-        style={styles.input}
+        style={styles.inputCompact}
       />
       <View style={styles.chipRow}>
         {chipAmounts.map((amount) => (
