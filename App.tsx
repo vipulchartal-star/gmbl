@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   Pressable,
   SafeAreaView,
   ScrollView,
@@ -72,6 +73,36 @@ const emptyMarket: Market = {
   totalPool: 0,
   totalBets: 0,
   updatedAt: '',
+};
+
+const createGeneratedCredentials = () => {
+  const loginSuffix = Math.random().toString(36).slice(2, 8);
+  const passwordSuffix = Math.random().toString(36).slice(2, 12);
+
+  return {
+    loginId: `player-${loginSuffix}`,
+    username: `Player ${loginSuffix.slice(0, 4)}` ,
+    password: `gmbl-${passwordSuffix}`,
+  };
+};
+
+const downloadTextFile = (filename: string, content: string) => {
+  if (Platform.OS !== 'web' || typeof document === 'undefined' || typeof URL === 'undefined') {
+    return false;
+  }
+
+  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+  const objectUrl = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+
+  link.href = objectUrl;
+  link.download = filename;
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(objectUrl);
+
+  return true;
 };
 
 export default function App() {
@@ -196,6 +227,32 @@ export default function App() {
     await persistSession(null);
   };
 
+
+  const generateSignupCredentials = () => {
+    const generated = createGeneratedCredentials();
+    const credentialText = [
+      'GMBL login credentials',
+      '',
+      `login_id: ${generated.loginId}`,
+      `username: ${generated.username}`,
+      `password: ${generated.password}`,
+      '',
+      `api_url: ${apiConfig.baseUrl}`,
+    ].join('\n');
+    const downloaded = downloadTextFile(`${generated.loginId}.txt`, credentialText);
+
+    setAuthMode('signup');
+    setLoginId(generated.loginId);
+    setUsername(generated.username);
+    setPassword(generated.password);
+
+    Alert.alert(
+      'Credentials generated',
+      downloaded
+        ? 'Signup fields were filled and a text file was downloaded.'
+        : 'Signup fields were filled. Save these credentials before creating the account.',
+    );
+  };
   const placeBet = async (side: BetSide) => {
     if (!session) {
       Alert.alert('Login required', 'Create an account or log in before placing a bet.');
@@ -310,6 +367,12 @@ export default function App() {
                   {authBusy ? 'Working...' : authMode === 'signup' ? 'Create Account' : 'Login'}
                 </Text>
               </Pressable>
+              <Pressable style={styles.secondaryGhostButton} disabled={authBusy} onPress={generateSignupCredentials}>
+                <Text style={styles.secondaryGhostButtonText}>Generate Login</Text>
+              </Pressable>
+              <Text style={styles.accountHint}>
+                Generates signup credentials and downloads a text file on web.
+              </Text>
             </>
           )}
         </View>
@@ -520,6 +583,18 @@ const styles = StyleSheet.create({
   },
   secondaryButtonText: {
     color: '#eff6ff',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+  secondaryGhostButton: {
+    alignItems: 'center',
+    borderColor: '#334155',
+    borderRadius: 14,
+    borderWidth: 1,
+    paddingVertical: 12,
+  },
+  secondaryGhostButtonText: {
+    color: '#cbd5e1',
     fontSize: 15,
     fontWeight: '700',
   },
