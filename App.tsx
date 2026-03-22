@@ -376,20 +376,16 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
       <ScrollView contentContainerStyle={styles.screen}>
-        <Text style={styles.eyebrow}>Realtime Betting</Text>
-        <Text style={styles.title}>GMBL</Text>
-        <Text style={styles.subtitle}>Node + Postgres backed betting client.</Text>
+        <Text style={styles.eyebrow}>{session ? 'Realtime Betting' : 'Account Access'}</Text>
+        <Text style={styles.title}>{session ? 'GMBL' : authMode === 'signup' ? 'Create Account' : 'Login'}</Text>
+        <Text style={styles.subtitle}>
+          {session
+            ? 'Place bets after you sign in.'
+            : 'Sign in first. After login, the market and bet controls will appear.'}
+        </Text>
 
         <View style={styles.card}>
-          <Text style={styles.sectionLabel}>API Endpoint</Text>
-          <Text style={styles.accountHint}>{apiConfig.baseUrl}</Text>
-          <Text style={styles.accountHint}>
-            For Android emulator use `10.0.2.2`. Change `src/api.ts` for a real server URL.
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Account</Text>
+          <Text style={styles.sectionLabel}>{session ? 'Account' : 'Login'}</Text>
           {sessionLoading ? (
             <View style={styles.loadingWrap}>
               <ActivityIndicator size="small" color="#f97316" />
@@ -460,61 +456,64 @@ export default function App() {
           )}
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Live Market</Text>
-          <Text style={styles.question}>{market.question}</Text>
-          {marketLoading ? (
-            <View style={styles.loadingWrap}>
-              <ActivityIndicator size="large" color="#f97316" />
+        {session ? (
+          <>
+            <View style={styles.card}>
+              <Text style={styles.sectionLabel}>Live Market</Text>
+              <Text style={styles.question}>{market.question}</Text>
+              {marketLoading ? (
+                <View style={styles.loadingWrap}>
+                  <ActivityIndicator size="large" color="#f97316" />
+                </View>
+              ) : (
+                <>
+                  <View style={styles.ratioRow}>
+                    <RatioPanel label="YES" value={market.yesPool} percent={yesShare} accent="#22c55e" />
+                    <RatioPanel label="NO" value={market.noPool} percent={noShare} accent="#ef4444" />
+                  </View>
+                  <View style={styles.statsRow}>
+                    <Stat label="Pool" value={totalPool.toFixed(2)} />
+                    <Stat label="Bets" value={`${market.totalBets}`} />
+                    <Stat label="Ratio" value={liveRatio} />
+                  </View>
+                </>
+              )}
             </View>
-          ) : (
-            <>
-              <View style={styles.ratioRow}>
-                <RatioPanel label="YES" value={market.yesPool} percent={yesShare} accent="#22c55e" />
-                <RatioPanel label="NO" value={market.noPool} percent={noShare} accent="#ef4444" />
-              </View>
-              <View style={styles.statsRow}>
-                <Stat label="Pool" value={totalPool.toFixed(2)} />
-                <Stat label="Bets" value={`${market.totalBets}`} />
-                <Stat label="Ratio" value={liveRatio} />
-              </View>
-            </>
-          )}
-        </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionLabel}>Bet Amount</Text>
-          <TextInput
-            keyboardType="numeric"
-            value={betAmount}
-            onChangeText={setBetAmount}
-            placeholder="10"
-            placeholderTextColor="#6b7280"
-            style={styles.input}
-          />
-          <View style={styles.chipRow}>
-            {chipAmounts.map((amount) => (
-              <Pressable key={amount} style={styles.chip} onPress={() => setBetAmount(String(amount))}>
-                <Text style={styles.chipText}>{amount}</Text>
-              </Pressable>
-            ))}
-          </View>
-          <View style={styles.betRow}>
-            <BetButton
-              label={submitting === 'yes' ? 'Placing...' : 'Bet YES'}
-              accent="#22c55e"
-              disabled={submitting !== null || !session}
-              onPress={() => placeBet('yes')}
-            />
-            <BetButton
-              label={submitting === 'no' ? 'Placing...' : 'Bet NO'}
-              accent="#ef4444"
-              disabled={submitting !== null || !session}
-              onPress={() => placeBet('no')}
-            />
-          </View>
-          {!session ? <Text style={styles.accountHint}>Sign in before placing a bet.</Text> : null}
-        </View>
+            <View style={styles.card}>
+              <Text style={styles.sectionLabel}>Bet Amount</Text>
+              <TextInput
+                keyboardType="numeric"
+                value={betAmount}
+                onChangeText={setBetAmount}
+                placeholder="10"
+                placeholderTextColor="#6b7280"
+                style={styles.input}
+              />
+              <View style={styles.chipRow}>
+                {chipAmounts.map((amount) => (
+                  <Pressable key={amount} style={styles.chip} onPress={() => setBetAmount(String(amount))}>
+                    <Text style={styles.chipText}>{amount}</Text>
+                  </Pressable>
+                ))}
+              </View>
+              <View style={styles.betRow}>
+                <BetButton
+                  label={submitting === 'yes' ? 'Placing...' : 'Bet YES'}
+                  accent="#22c55e"
+                  disabled={submitting !== null}
+                  onPress={() => placeBet('yes')}
+                />
+                <BetButton
+                  label={submitting === 'no' ? 'Placing...' : 'Bet NO'}
+                  accent="#ef4444"
+                  disabled={submitting !== null}
+                  onPress={() => placeBet('no')}
+                />
+              </View>
+            </View>
+          </>
+        ) : null}
 
         {errorText ? (
           <View style={styles.warningCard}>
