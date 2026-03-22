@@ -62,8 +62,7 @@ export function AccountCard({
   const isSignup = authMode === 'signup';
 
   return (
-    <View style={styles.card}>
-      <Text style={styles.sectionLabel}>{session ? 'Session' : isSignup ? 'Create Account' : 'Login'}</Text>
+    <View style={session ? styles.sessionStrip : styles.card}>
       {sessionLoading ? (
         <View style={styles.loadingWrap}>
           <ActivityIndicator size="small" color="#f97316" />

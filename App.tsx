@@ -272,7 +272,7 @@ export default function App() {
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
       <ScrollView contentContainerStyle={styles.screen}>
-        <ScreenHeader authMode={authMode} session={session} />
+        {session ? null : <ScreenHeader authMode={authMode} session={session} />}
         <AccountCard
           authBusy={authBusy}
           authMode={authMode}

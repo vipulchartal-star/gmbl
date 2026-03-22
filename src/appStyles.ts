@@ -43,6 +43,18 @@ export const styles = StyleSheet.create({
     padding: 16,
     gap: 12,
   },
+  sessionStrip: {
+    alignItems: 'center',
+    backgroundColor: '#0f172a',
+    borderColor: '#1e293b',
+    borderRadius: 20,
+    borderWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
   sectionLabel: {
     color: '#e2e8f0',
     fontSize: 13,
