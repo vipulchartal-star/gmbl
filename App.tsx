@@ -33,6 +33,7 @@ export default function App() {
   const [password, setPassword] = useState('');
   const [session, setSession] = useState<SessionState | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
+  const [authDebugText, setAuthDebugText] = useState<string | null>(null);
 
   const totalPool = market.totalPool || market.yesPool + market.noPool;
   const yesShare = totalPool > 0 ? market.yesPool / totalPool : 0.5;
@@ -117,7 +118,9 @@ export default function App() {
 
     try {
       setAuthBusy(true);
+      setAuthDebugText(null);
       const path = authMode === 'signup' ? '/auth/signup' : '/auth/login';
+      console.log('[auth] submit', { mode: authMode, path, loginId, baseUrl: apiConfig.baseUrl });
       const response = await apiRequest<AuthResponse>(path, {
         method: 'POST',
         body:
@@ -126,11 +129,18 @@ export default function App() {
             : { loginId, password },
       });
 
+      console.log('[auth] success', { mode: authMode, loginId: response.user.loginId, userId: response.user.id });
       await persistSession({ token: response.token, user: response.user });
       clearAuthForm();
       setErrorText(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Authentication failed.';
+      const debugMessage =
+        error instanceof ApiError
+          ? `mode=${authMode} status=${error.status} path=${error.details?.path ?? 'unknown'} baseUrl=${error.details?.baseUrl ?? apiConfig.baseUrl} message=${message}`
+          : `mode=${authMode} baseUrl=${apiConfig.baseUrl} message=${message}`;
+      console.log('[auth] failure', debugMessage);
+      setAuthDebugText(debugMessage);
       Alert.alert(authMode === 'signup' ? 'Signup failed' : 'Login failed', message);
     } finally {
       setAuthBusy(false);
@@ -273,6 +283,7 @@ export default function App() {
             />
           </>
         ) : null}
+        {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
         {errorText ? <WarningCard errorText={errorText} /> : null}
       </ScrollView>
     </SafeAreaView>

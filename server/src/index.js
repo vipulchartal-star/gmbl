@@ -13,6 +13,10 @@ const marketSubscribers = new Set();
 app.use(cors({ origin: config.corsOrigin === '*' ? true : config.corsOrigin }));
 app.use(express.json());
 
+const logAuth = (event, details = {}) => {
+  console.log(`[auth] ${event}`, details);
+};
+
 const publishMarket = (market) => {
   const payload = `event: market\ndata: ${JSON.stringify(market)}\n\n`;
   for (const subscriber of marketSubscribers) {
@@ -56,7 +60,10 @@ app.post('/auth/signup', async (req, res) => {
   const password = String(req.body.password ?? '');
   const username = loginId;
 
+  logAuth('signup_attempt', { loginId, passwordLength: password.length });
+
   if (loginId.length < 4 || password.length < 6) {
+    logAuth('signup_invalid_payload', { loginId, passwordLength: password.length });
     res.status(400).json({ error: 'Invalid signup payload.' });
     return;
   }
@@ -68,6 +75,7 @@ app.post('/auth/signup', async (req, res) => {
 
       const existing = await client.query('select id from app_users where login_id = $1', [loginId]);
       if (existing.rows[0]) {
+        logAuth('signup_login_id_taken', { loginId });
         throw new Error('LOGIN_ID_TAKEN');
       }
 
@@ -89,6 +97,8 @@ app.post('/auth/signup', async (req, res) => {
       return user;
     });
 
+    logAuth('signup_success', { loginId, userId: result.id });
+
     res.status(201).json({
       token: issueToken(result),
       user: {
@@ -104,6 +114,7 @@ app.post('/auth/signup', async (req, res) => {
       return;
     }
 
+    logAuth('signup_error', { loginId, error: error instanceof Error ? error.message : 'unknown' });
     res.status(500).json({ error: 'Signup failed.' });
   }
 });
@@ -112,7 +123,10 @@ app.post('/auth/login', async (req, res) => {
   const loginId = String(req.body.loginId ?? '').trim().toLowerCase();
   const password = String(req.body.password ?? '');
 
+  logAuth('login_attempt', { loginId, passwordLength: password.length });
+
   if (!loginId || !password) {
+    logAuth('login_missing_credentials', { loginId, passwordLength: password.length });
     res.status(400).json({ error: 'Missing login credentials.' });
     return;
   }
@@ -125,15 +139,19 @@ app.post('/auth/login', async (req, res) => {
     const user = result.rows[0];
 
     if (!user) {
+      logAuth('login_user_not_found', { loginId });
       res.status(401).json({ error: 'Invalid credentials.' });
       return;
     }
 
     const matches = await verifyPassword(password, user.password_hash);
     if (!matches) {
+      logAuth('login_password_mismatch', { loginId, userId: user.id });
       res.status(401).json({ error: 'Invalid credentials.' });
       return;
     }
+
+    logAuth('login_success', { loginId, userId: user.id });
 
     res.json({
       token: issueToken(user),
@@ -144,7 +162,8 @@ app.post('/auth/login', async (req, res) => {
         balance: Number(user.balance),
       },
     });
-  } catch {
+  } catch (error) {
+    logAuth('login_error', { loginId, error: error instanceof Error ? error.message : 'unknown' });
     res.status(500).json({ error: 'Login failed.' });
   }
 });
@@ -239,6 +258,8 @@ app.post('/bets', requireAuth, async (req, res) => {
     });
 
     publishMarket(result.market);
+
+    logAuth('signup_success', { loginId, userId: result.id });
 
     res.status(201).json({
       bet: {

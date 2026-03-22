@@ -4,10 +4,12 @@ export const apiConfig = {
 
 export class ApiError extends Error {
   status: number;
+  details: { path: string; method: string; baseUrl: string; payload: unknown } | null;
 
-  constructor(message: string, status: number) {
+  constructor(message: string, status: number, details: { path: string; method: string; baseUrl: string; payload: unknown } | null = null) {
     super(message);
     this.status = status;
+    this.details = details;
   }
 }
 
@@ -30,7 +32,12 @@ export const apiRequest = async <T>(path: string, options: RequestOptions = {}):
   const payload = (await response.json().catch(() => null)) as { error?: string } | null;
 
   if (!response.ok) {
-    throw new ApiError(payload?.error ?? 'Request failed.', response.status);
+    throw new ApiError(payload?.error ?? 'Request failed.', response.status, {
+      path,
+      method: options.method ?? 'GET',
+      baseUrl: apiConfig.baseUrl,
+      payload,
+    });
   }
 
   return payload as T;
