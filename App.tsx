@@ -339,7 +339,12 @@ export default function App() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
-      <ScrollView contentContainerStyle={styles.screen}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scrollContent}
+        endFillColor="#08111f"
+        alwaysBounceVertical={false}
+      >
         {session ? null : <ScreenHeader authMode={authMode} session={session} />}
         {betContent}
       </ScrollView>

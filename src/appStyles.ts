@@ -5,6 +5,17 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#08111f',
   },
+  scrollView: {
+    flex: 1,
+    backgroundColor: '#08111f',
+  },
+  scrollContent: {
+    flexGrow: 1,
+    backgroundColor: '#08111f',
+    paddingHorizontal: 20,
+    paddingVertical: 28,
+    gap: 18,
+  },
   screen: {
     paddingHorizontal: 20,
     paddingVertical: 28,
