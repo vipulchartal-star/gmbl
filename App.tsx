@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, ImageBackground, Platform, SafeAreaView, ScrollView, View } from 'react-native';
+import { Alert, ImageBackground, Platform, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
 import { AccountCard, BetCard, MarketCard, ScreenHeader, WarningCard } from './src/appComponents';
 import { styles } from './src/appStyles';
@@ -273,6 +273,28 @@ export default function App() {
 
   const betContent = (
     <>
+      {session ? (
+        <ImageBackground source={require('./assets/green.jpg')} style={styles.posterHero} imageStyle={styles.posterHeroImage}>
+          <View style={styles.posterHeroShade}>
+            <Text style={styles.posterEyebrow}>Match Poster</Text>
+            <Text style={styles.posterTitle}>{market.question}</Text>
+            <View style={styles.posterMetaRow}>
+              <View style={styles.posterPill}>
+                <Text style={styles.posterPillLabel}>Ratio</Text>
+                <Text style={styles.posterPillValue}>{liveRatio}</Text>
+              </View>
+              <View style={styles.posterPill}>
+                <Text style={styles.posterPillLabel}>Pool</Text>
+                <Text style={styles.posterPillValue}>{totalPool.toFixed(2)}</Text>
+              </View>
+              <View style={styles.posterPill}>
+                <Text style={styles.posterPillLabel}>Status</Text>
+                <Text style={styles.posterPillValue}>{market.status}</Text>
+              </View>
+            </View>
+          </View>
+        </ImageBackground>
+      ) : null}
       <AccountCard
         authBusy={authBusy}
         authMode={authMode}
@@ -317,18 +339,10 @@ export default function App() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
-      {session ? (
-        <ImageBackground source={require('./assets/green.jpg')} style={styles.betBackground} imageStyle={styles.betBackgroundImage}>
-          <View style={styles.betOverlay}>
-            <ScrollView contentContainerStyle={[styles.screen, styles.screenWithBackground]}>{betContent}</ScrollView>
-          </View>
-        </ImageBackground>
-      ) : (
-        <ScrollView contentContainerStyle={styles.screen}>
-          <ScreenHeader authMode={authMode} session={session} />
-          {betContent}
-        </ScrollView>
-      )}
+      <ScrollView contentContainerStyle={styles.screen}>
+        {session ? null : <ScreenHeader authMode={authMode} session={session} />}
+        {betContent}
+      </ScrollView>
     </SafeAreaView>
   );
 }

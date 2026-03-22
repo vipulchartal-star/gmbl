@@ -5,23 +5,72 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#08111f',
   },
-  betBackground: {
-    flex: 1,
-  },
-  betBackgroundImage: {
-    opacity: 0.58,
-  },
-  betOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(3, 12, 10, 0.72)',
-  },
   screen: {
     paddingHorizontal: 20,
     paddingVertical: 28,
     gap: 18,
   },
-  screenWithBackground: {
-    paddingBottom: 40,
+  posterHero: {
+    minHeight: 420,
+    borderRadius: 30,
+    overflow: 'hidden',
+    justifyContent: 'flex-end',
+    backgroundColor: '#08111f',
+  },
+  posterHeroImage: {
+    resizeMode: 'cover',
+  },
+  posterHeroShade: {
+    minHeight: 420,
+    justifyContent: 'flex-end',
+    paddingHorizontal: 22,
+    paddingVertical: 22,
+    backgroundColor: 'rgba(7, 11, 14, 0.22)',
+  },
+  posterEyebrow: {
+    color: '#86efac',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 2,
+    marginBottom: 10,
+    textTransform: 'uppercase',
+  },
+  posterTitle: {
+    color: '#ffffff',
+    fontSize: 34,
+    fontWeight: '900',
+    lineHeight: 38,
+    maxWidth: '78%',
+    textShadowColor: 'rgba(0, 0, 0, 0.45)',
+    textShadowOffset: { width: 0, height: 3 },
+    textShadowRadius: 10,
+  },
+  posterMetaRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+    marginTop: 18,
+  },
+  posterPill: {
+    backgroundColor: 'rgba(7, 17, 27, 0.68)',
+    borderColor: 'rgba(255, 255, 255, 0.16)',
+    borderRadius: 16,
+    borderWidth: 1,
+    minWidth: 102,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+  },
+  posterPillLabel: {
+    color: '#94a3b8',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  posterPillValue: {
+    color: '#f8fafc',
+    fontSize: 16,
+    fontWeight: '800',
   },
   eyebrow: {
     color: '#f97316',
@@ -49,7 +98,7 @@ export const styles = StyleSheet.create({
     gap: 14,
   },
   cardCompact: {
-    backgroundColor: 'rgba(8, 22, 18, 0.86)',
+    backgroundColor: 'rgba(8, 22, 18, 0.9)',
     borderColor: 'rgba(94, 234, 212, 0.14)',
     borderRadius: 22,
     borderWidth: 1,
@@ -58,7 +107,7 @@ export const styles = StyleSheet.create({
   },
   sessionStrip: {
     alignItems: 'center',
-    backgroundColor: 'rgba(8, 22, 18, 0.9)',
+    backgroundColor: 'rgba(8, 22, 18, 0.92)',
     borderColor: 'rgba(94, 234, 212, 0.16)',
     borderRadius: 20,
     borderWidth: 1,
