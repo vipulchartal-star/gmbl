@@ -71,14 +71,14 @@ export default function App() {
   );
 
   const persistSession = async (nextSession: SessionState | null) => {
+    setSession(nextSession);
+
     if (nextSession) {
       await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
-      setSession(nextSession);
       return;
     }
 
     await sessionStorage.removeItem(sessionKey);
-    setSession(null);
   };
 
   const loadMarket = async () => {
@@ -246,14 +246,17 @@ export default function App() {
         body: { side, amount },
       });
 
-      setMarket(response.market);
-      await persistSession({
+      const nextSession = {
         token: session.token,
         user: {
           ...session.user,
           balance: response.balance,
         },
-      });
+      };
+
+      setSession(nextSession);
+      setMarket(response.market);
+      await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
       setErrorText(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bet placement failed.';
