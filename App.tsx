@@ -1,7 +1,7 @@
 import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, Platform, SafeAreaView, ScrollView } from 'react-native';
+import { Alert, ImageBackground, Platform, SafeAreaView, ScrollView, View } from 'react-native';
 
 import { AccountCard, BetCard, MarketCard, ScreenHeader, WarningCard } from './src/appComponents';
 import { styles } from './src/appStyles';
@@ -271,50 +271,64 @@ export default function App() {
     }
   };
 
+  const betContent = (
+    <>
+      <AccountCard
+        authBusy={authBusy}
+        authMode={authMode}
+        loginId={loginId}
+        marketStatus={market.status}
+        onChangeLoginId={setLoginId}
+        onChangePassword={setPassword}
+        onGenerateCredentials={generateSignupCredentials}
+        onLoginMode={() => setAuthMode('login')}
+        onLogout={logout}
+        onSignupMode={() => setAuthMode('signup')}
+        onSubmit={submitAuth}
+        onUploadLoginFile={uploadLoginFile}
+        password={password}
+        session={session}
+        sessionLoading={sessionLoading}
+      />
+      {session ? (
+        <>
+          <MarketCard
+            liveRatio={liveRatio}
+            market={market}
+            marketLoading={marketLoading}
+            noShare={noShare}
+            totalPool={totalPool}
+            yesShare={yesShare}
+          />
+          <BetCard
+            betAmount={betAmount}
+            onChangeBetAmount={setBetAmount}
+            onPlaceNo={() => placeBet('no')}
+            onPlaceYes={() => placeBet('yes')}
+            submitting={submitting}
+          />
+        </>
+      ) : null}
+      {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
+      {errorText ? <WarningCard errorText={errorText} /> : null}
+    </>
+  );
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
-      <ScrollView contentContainerStyle={styles.screen}>
-        {session ? null : <ScreenHeader authMode={authMode} session={session} />}
-        <AccountCard
-          authBusy={authBusy}
-          authMode={authMode}
-          loginId={loginId}
-          marketStatus={market.status}
-          onChangeLoginId={setLoginId}
-          onChangePassword={setPassword}
-          onGenerateCredentials={generateSignupCredentials}
-          onLoginMode={() => setAuthMode('login')}
-          onLogout={logout}
-          onSignupMode={() => setAuthMode('signup')}
-          onSubmit={submitAuth}
-          onUploadLoginFile={uploadLoginFile}
-          password={password}
-          session={session}
-          sessionLoading={sessionLoading}
-        />
-        {session ? (
-          <>
-            <MarketCard
-              liveRatio={liveRatio}
-              market={market}
-              marketLoading={marketLoading}
-              noShare={noShare}
-              totalPool={totalPool}
-              yesShare={yesShare}
-            />
-            <BetCard
-              betAmount={betAmount}
-              onChangeBetAmount={setBetAmount}
-              onPlaceNo={() => placeBet('no')}
-              onPlaceYes={() => placeBet('yes')}
-              submitting={submitting}
-            />
-          </>
-        ) : null}
-        {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
-        {errorText ? <WarningCard errorText={errorText} /> : null}
-      </ScrollView>
+      {session ? (
+        <ImageBackground source={require('./assets/green.jpg')} style={styles.betBackground} imageStyle={styles.betBackgroundImage}>
+          <View style={styles.betOverlay}>
+            <ScrollView contentContainerStyle={[styles.screen, styles.screenWithBackground]}>{betContent}</ScrollView>
+          </View>
+        </ImageBackground>
+      ) : (
+        <ScrollView contentContainerStyle={styles.screen}>
+          <ScreenHeader authMode={authMode} session={session} />
+          {betContent}
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }

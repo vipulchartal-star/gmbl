@@ -5,10 +5,23 @@ export const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#08111f',
   },
+  betBackground: {
+    flex: 1,
+  },
+  betBackgroundImage: {
+    opacity: 0.58,
+  },
+  betOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(3, 12, 10, 0.72)',
+  },
   screen: {
     paddingHorizontal: 20,
     paddingVertical: 28,
     gap: 18,
+  },
+  screenWithBackground: {
+    paddingBottom: 40,
   },
   eyebrow: {
     color: '#f97316',
@@ -36,8 +49,8 @@ export const styles = StyleSheet.create({
     gap: 14,
   },
   cardCompact: {
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
+    backgroundColor: 'rgba(8, 22, 18, 0.86)',
+    borderColor: 'rgba(94, 234, 212, 0.14)',
     borderRadius: 22,
     borderWidth: 1,
     padding: 16,
@@ -45,8 +58,8 @@ export const styles = StyleSheet.create({
   },
   sessionStrip: {
     alignItems: 'center',
-    backgroundColor: '#0f172a',
-    borderColor: '#1e293b',
+    backgroundColor: 'rgba(8, 22, 18, 0.9)',
+    borderColor: 'rgba(94, 234, 212, 0.16)',
     borderRadius: 20,
     borderWidth: 1,
     flexDirection: 'row',
@@ -56,7 +69,7 @@ export const styles = StyleSheet.create({
     paddingVertical: 12,
   },
   sectionLabel: {
-    color: '#e2e8f0',
+    color: '#d1fae5',
     fontSize: 13,
     fontWeight: '700',
     letterSpacing: 0.8,
@@ -73,8 +86,8 @@ export const styles = StyleSheet.create({
     paddingVertical: 14,
   },
   inputCompact: {
-    backgroundColor: '#111827',
-    borderColor: '#334155',
+    backgroundColor: 'rgba(7, 17, 27, 0.82)',
+    borderColor: 'rgba(148, 163, 184, 0.35)',
     borderRadius: 14,
     borderWidth: 1,
     color: '#f8fafc',
@@ -128,7 +141,7 @@ export const styles = StyleSheet.create({
   },
   ratioPanel: {
     flex: 1,
-    backgroundColor: '#111827',
+    backgroundColor: 'rgba(7, 17, 27, 0.76)',
     borderRadius: 18,
     padding: 14,
     gap: 10,
@@ -163,7 +176,7 @@ export const styles = StyleSheet.create({
   },
   statBox: {
     flex: 1,
-    backgroundColor: '#111827',
+    backgroundColor: 'rgba(7, 17, 27, 0.76)',
     borderRadius: 16,
     padding: 12,
   },
@@ -184,7 +197,7 @@ export const styles = StyleSheet.create({
     gap: 10,
   },
   chip: {
-    backgroundColor: '#1e293b',
+    backgroundColor: 'rgba(30, 41, 59, 0.82)',
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 9,
@@ -294,7 +307,7 @@ export const styles = StyleSheet.create({
     fontSize: 13,
   },
   inlineLogoutButton: {
-    backgroundColor: '#1e293b',
+    backgroundColor: 'rgba(30, 41, 59, 0.82)',
     borderRadius: 999,
     paddingHorizontal: 14,
     paddingVertical: 10,
