@@ -37,3 +37,7 @@ Recommended production hosting is Render:
 
 The Expo app still exists in the root, but it has not yet been rewritten to consume the new Node API.
 The serious backend is now scaffolded and ready to deploy first.
+
+## Web Deploy
+
+The Expo web build can be deployed to Vercel with `npx expo export --platform web`.
