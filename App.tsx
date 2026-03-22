@@ -30,6 +30,57 @@ type Market = {
   updatedAt: string;
 };
 
+const parseCredentialText = (content: string) => {
+  const entries = Object.fromEntries(
+    content
+      .split(/\r?\n/)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const separatorIndex = line.indexOf(':');
+        if (separatorIndex === -1) {
+          return ['', ''];
+        }
+
+        return [line.slice(0, separatorIndex).trim(), line.slice(separatorIndex + 1).trim()];
+      })
+      .filter(([key, value]) => key && value),
+  ) as Record<string, string>;
+
+  return {
+    loginId: entries.login_id ?? '',
+    username: entries.username ?? '',
+    password: entries.password ?? '',
+  };
+};
+
+const readCredentialFile = () =>
+  new Promise<string>((resolve, reject) => {
+    if (Platform.OS !== 'web' || typeof document === 'undefined' || typeof FileReader === 'undefined') {
+      reject(new Error('File upload is only available on web.'));
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.txt,text/plain';
+    input.onchange = () => {
+      const file = input.files?.[0];
+
+      if (!file) {
+        reject(new Error('No file selected.'));
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => resolve(typeof reader.result === 'string' ? reader.result : '');
+      reader.onerror = () => reject(new Error('Failed to read file.'));
+      reader.readAsText(file);
+    };
+
+    input.click();
+  });
+
 type SessionUser = {
   id: string;
   loginId: string;
@@ -81,7 +132,7 @@ const createGeneratedCredentials = () => {
 
   return {
     loginId: `player-${loginSuffix}`,
-    username: `Player ${loginSuffix.slice(0, 4)}` ,
+    username: `Player ${loginSuffix.slice(0, 4)}`,
     password: `gmbl-${passwordSuffix}`,
   };
 };
@@ -253,6 +304,32 @@ export default function App() {
         : 'Signup fields were filled. Save these credentials before creating the account.',
     );
   };
+
+  const uploadLoginFile = async () => {
+    try {
+      const content = await readCredentialFile();
+      const parsed = parseCredentialText(content);
+
+      if (!parsed.loginId || !parsed.password) {
+        throw new Error('The file is missing login_id or password.');
+      }
+
+      setAuthMode('login');
+      setLoginId(parsed.loginId);
+      setUsername(parsed.username);
+      setPassword(parsed.password);
+
+      Alert.alert('Credentials loaded', 'Login details were loaded from the file.');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to load credentials.';
+
+      if (message === 'No file selected.') {
+        return;
+      }
+
+      Alert.alert('Upload failed', message);
+    }
+  };
   const placeBet = async (side: BetSide) => {
     if (!session) {
       Alert.alert('Login required', 'Create an account or log in before placing a bet.');
@@ -372,6 +449,12 @@ export default function App() {
               </Pressable>
               <Text style={styles.accountHint}>
                 Generates signup credentials and downloads a text file on web.
+              </Text>
+              <Pressable style={styles.secondaryGhostButton} disabled={authBusy} onPress={uploadLoginFile}>
+                <Text style={styles.secondaryGhostButtonText}>Upload Login File</Text>
+              </Pressable>
+              <Text style={styles.accountHint}>
+                Use the downloaded credential file to refill login details instantly on web.
               </Text>
             </>
           )}
