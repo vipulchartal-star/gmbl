@@ -1,5 +1,5 @@
 export const apiConfig = {
-  baseUrl: 'http://10.0.2.2:3000',
+  baseUrl: process.env.EXPO_PUBLIC_API_URL ?? 'https://gmbl-1.onrender.com',
 };
 
 export class ApiError extends Error {
