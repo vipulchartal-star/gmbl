@@ -30,7 +30,6 @@ export default function App() {
   const [authBusy, setAuthBusy] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [loginId, setLoginId] = useState('');
-  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [session, setSession] = useState<SessionState | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -109,7 +108,6 @@ export default function App() {
 
   const clearAuthForm = () => {
     setPassword('');
-    setUsername('');
   };
 
   const submitAuth = async () => {
@@ -124,7 +122,7 @@ export default function App() {
         method: 'POST',
         body:
           authMode === 'signup'
-            ? { loginId, username, password }
+            ? { loginId, password }
             : { loginId, password },
       });
 
@@ -149,7 +147,6 @@ export default function App() {
       'GMBL login credentials',
       '',
       `login_id: ${generated.loginId}`,
-      `username: ${generated.username}`,
       `password: ${generated.password}`,
       '',
       `api_url: ${apiConfig.baseUrl}`,
@@ -158,7 +155,6 @@ export default function App() {
 
     setAuthMode('signup');
     setLoginId(generated.loginId);
-    setUsername(generated.username);
     setPassword(generated.password);
 
     Alert.alert(
@@ -180,7 +176,6 @@ export default function App() {
 
       setAuthMode('login');
       setLoginId(parsed.loginId);
-      setUsername(parsed.username);
       setPassword(parsed.password);
 
       Alert.alert('Credentials loaded', 'Login details were loaded from the file.');
@@ -249,7 +244,6 @@ export default function App() {
           marketStatus={market.status}
           onChangeLoginId={setLoginId}
           onChangePassword={setPassword}
-          onChangeUsername={setUsername}
           onGenerateCredentials={generateSignupCredentials}
           onLoginMode={() => setAuthMode('login')}
           onLogout={logout}
@@ -259,7 +253,6 @@ export default function App() {
           password={password}
           session={session}
           sessionLoading={sessionLoading}
-          username={username}
         />
         {session ? (
           <>

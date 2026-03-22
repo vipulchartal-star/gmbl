@@ -17,7 +17,7 @@ export function ScreenHeader({ authMode, session }: HeaderProps) {
         {session
           ? 'Place bets after you sign in.'
           : authMode === 'signup'
-            ? 'Create your account first, then the market will appear after login.'
+            ? 'Create your account with only login id and password.'
             : 'Enter your login id and password. The betting market appears after login.'}
       </Text>
     </>
@@ -31,7 +31,6 @@ type AccountCardProps = {
   marketStatus: string;
   onChangeLoginId: (value: string) => void;
   onChangePassword: (value: string) => void;
-  onChangeUsername: (value: string) => void;
   onGenerateCredentials: () => void;
   onLoginMode: () => void;
   onLogout: () => void;
@@ -41,7 +40,6 @@ type AccountCardProps = {
   password: string;
   session: SessionState | null;
   sessionLoading: boolean;
-  username: string;
 };
 
 export function AccountCard({
@@ -51,7 +49,6 @@ export function AccountCard({
   marketStatus,
   onChangeLoginId,
   onChangePassword,
-  onChangeUsername,
   onGenerateCredentials,
   onLoginMode,
   onLogout,
@@ -61,7 +58,6 @@ export function AccountCard({
   password,
   session,
   sessionLoading,
-  username,
 }: AccountCardProps) {
   const isSignup = authMode === 'signup';
 
@@ -75,8 +71,8 @@ export function AccountCard({
       ) : session ? (
         <>
           <View style={styles.accountRow}>
-            <Text style={styles.accountName}>{session.user.username}</Text>
-            <Text style={styles.accountMeta}>@{session.user.loginId}</Text>
+            <Text style={styles.accountName}>@{session.user.loginId}</Text>
+            <Text style={styles.accountMeta}>Signed in</Text>
           </View>
           <View style={styles.statsRow}>
             <Stat label="Balance" value={session.user.balance.toFixed(2)} />
@@ -96,15 +92,6 @@ export function AccountCard({
             placeholderTextColor="#6b7280"
             style={styles.input}
           />
-          {isSignup ? (
-            <TextInput
-              value={username}
-              onChangeText={onChangeUsername}
-              placeholder="username"
-              placeholderTextColor="#6b7280"
-              style={styles.input}
-            />
-          ) : null}
           <TextInput
             secureTextEntry
             value={password}

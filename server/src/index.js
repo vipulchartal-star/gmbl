@@ -53,10 +53,10 @@ app.get('/market/stream', async (_req, res) => {
 
 app.post('/auth/signup', async (req, res) => {
   const loginId = String(req.body.loginId ?? '').trim().toLowerCase();
-  const username = String(req.body.username ?? '').trim();
   const password = String(req.body.password ?? '');
+  const username = loginId;
 
-  if (loginId.length < 4 || username.length < 3 || password.length < 6) {
+  if (loginId.length < 4 || password.length < 6) {
     res.status(400).json({ error: 'Invalid signup payload.' });
     return;
   }
