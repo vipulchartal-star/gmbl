@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
 
 import { styles } from './appStyles';
@@ -71,7 +72,9 @@ export function AccountCard({
         <View style={styles.accountTopBar}>
           <View style={styles.accountTopMeta}>
             <Text style={styles.accountTag}>@{session.user.loginId}</Text>
-            <Text style={styles.accountBalance}>Balance {session.user.balance.toFixed(2)}</Text>
+            <Text style={styles.accountBalance}>
+              Balance <AnimatedNumber value={session.user.balance} decimals={2} />
+            </Text>
             <Text style={styles.accountStatus}>Market {marketStatus}</Text>
           </View>
           <Pressable style={styles.inlineLogoutButton} onPress={onLogout}>
@@ -152,9 +155,9 @@ export function MarketCard({ liveRatio, market, marketLoading, noShare, totalPoo
             <RatioPanel label="NO" value={market.noPool} percent={noShare} accent="#ef4444" />
           </View>
           <View style={styles.statsRow}>
-            <Stat label="Pool" value={totalPool.toFixed(2)} />
-            <Stat label="Bets" value={`${market.totalBets}`} />
-            <Stat label="Ratio" value={liveRatio} />
+            <Stat label="Pool" value={totalPool} decimals={2} />
+            <Stat label="Bets" value={market.totalBets} decimals={0} />
+            <Stat label="Ratio" textValue={liveRatio} />
           </View>
         </>
       )}
@@ -230,20 +233,30 @@ function RatioPanel({
   return (
     <View style={styles.ratioPanel}>
       <Text style={[styles.ratioLabel, { color: accent }]}>{label}</Text>
-      <Text style={styles.ratioValue}>{(percent * 100).toFixed(1)}%</Text>
+      <Text style={styles.ratioValue}><AnimatedNumber value={percent * 100} decimals={1} suffix="%" /></Text>
       <View style={styles.meterTrack}>
         <View style={[styles.meterFill, { backgroundColor: accent, width: `${percent * 100}%` }]} />
       </View>
-      <Text style={styles.poolText}>Pool {value.toFixed(2)}</Text>
+      <Text style={styles.poolText}>Pool <AnimatedNumber value={value} decimals={2} /></Text>
     </View>
   );
 }
 
-function Stat({ label, value }: { label: string; value: string }) {
+function Stat({
+  label,
+  value,
+  decimals = 0,
+  textValue,
+}: {
+  label: string;
+  value?: number;
+  decimals?: number;
+  textValue?: string;
+}) {
   return (
     <View style={styles.statBox}>
       <Text style={styles.statLabel}>{label}</Text>
-      <Text style={styles.statValue}>{value}</Text>
+      <Text style={styles.statValue}>{textValue ?? <AnimatedNumber value={value ?? 0} decimals={decimals} />}</Text>
     </View>
   );
 }
@@ -274,4 +287,47 @@ function BetButton({
       <Text style={styles.betButtonText}>{label}</Text>
     </Pressable>
   );
+}
+
+function AnimatedNumber({
+  decimals = 0,
+  prefix = '',
+  suffix = '',
+  value,
+}: {
+  decimals?: number;
+  prefix?: string;
+  suffix?: string;
+  value: number;
+}) {
+  const [displayValue, setDisplayValue] = useState(value);
+  const previousValueRef = useRef(value);
+
+  useEffect(() => {
+    const startValue = previousValueRef.current;
+    const endValue = value;
+    const startedAt = Date.now();
+    const durationMs = 420;
+    let frameId = 0;
+
+    const tick = () => {
+      const elapsed = Date.now() - startedAt;
+      const progress = Math.min(elapsed / durationMs, 1);
+      const eased = 1 - (1 - progress) * (1 - progress);
+      const nextValue = startValue + (endValue - startValue) * eased;
+
+      setDisplayValue(nextValue);
+
+      if (progress < 1) {
+        frameId = requestAnimationFrame(tick);
+      } else {
+        previousValueRef.current = endValue;
+      }
+    };
+
+    frameId = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frameId);
+  }, [value]);
+
+  return <>{`${prefix}${displayValue.toFixed(decimals)}${suffix}`}</>;
 }

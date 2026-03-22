@@ -247,7 +247,7 @@ export default function App() {
       });
 
       setMarket(response.market);
-      setSession({
+      await persistSession({
         token: session.token,
         user: {
           ...session.user,
