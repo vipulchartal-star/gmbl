@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: gmbl-api
+    runtime: node
+    plan: starter
+    rootDir: server
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DEFAULT_MARKET_SLUG
+        value: live-yes-no
+      - key: DEFAULT_MARKET_QUESTION
+        value: Will the outcome be YES?
+      - key: SIGNUP_STARTING_BALANCE
+        value: 1000
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: gmbl-db
+          property: connectionString
+
+databases:
+  - name: gmbl-db
+    plan: starter
