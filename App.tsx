@@ -58,7 +58,7 @@ export default function App() {
   const [errorText, setErrorText] = useState<string | null>(null);
   const [authDebugText, setAuthDebugText] = useState<string | null>(null);
 
-  const cardHeight = Math.max(420, height - 160);
+  const cardHeight = Math.max(420, height - 126);
 
   const persistSession = async (nextSession: SessionState | null) => {
     setSession(nextSession);

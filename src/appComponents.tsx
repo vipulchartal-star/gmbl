@@ -68,15 +68,15 @@ export function AccountCard({
         </View>
       ) : session ? (
         <View style={styles.accountTopBar}>
-          <View style={styles.accountTopMeta}>
+          <View style={styles.accountSlimMeta}>
             <Text style={styles.accountTag}>@{session.user.loginId}</Text>
+            <Text style={styles.accountDot}>•</Text>
             <Text style={styles.accountBalance}>
-              Balance <AnimatedNumber value={session.user.balance} decimals={2} />
+              Bal <AnimatedNumber value={session.user.balance} decimals={2} />
             </Text>
-            <Text style={styles.accountStatus}>Swipe up or down to switch bets</Text>
           </View>
           <Pressable style={styles.inlineLogoutButton} onPress={onLogout}>
-            <Text style={styles.inlineLogoutText}>Log Out</Text>
+            <Text style={styles.inlineLogoutText}>Logout</Text>
           </Pressable>
         </View>
       ) : (
