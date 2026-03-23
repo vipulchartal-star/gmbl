@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { styles } from './appStyles';
 import { chipAmounts, type AuthMode, type BetCard, type BetChoiceKey, type SessionState } from './appTypes';
@@ -138,6 +138,15 @@ type BetSwiperProps = {
   submittingBetId: string | null;
 };
 
+const showHelpDialog = (title: string, message: string) => {
+  if (Platform.OS === 'web' && typeof globalThis.alert === 'function') {
+    globalThis.alert(title + '\n\n' + message);
+    return;
+  }
+
+  Alert.alert(title, message);
+};
+
 export function BetSwiper({
   bets,
   betAmount,
@@ -190,7 +199,7 @@ export function BetSwiper({
               <View style={styles.betActionPanel}>
                 <View style={styles.betActionHeader}>
                   <Text style={styles.betActionTitle}>Stake</Text>
-                  <Pressable style={styles.helpButton} onPress={() => Alert.alert(bet.outcomeLabel, helpText)}>
+                  <Pressable style={styles.helpButton} onPress={() => showHelpDialog(bet.outcomeLabel, helpText)}>
                     <Text style={styles.helpButtonText}>?</Text>
                   </Pressable>
                 </View>
