@@ -27,3 +27,11 @@ export const withTransaction = async (handler) => {
     client.release();
   }
 };
+
+export const ensureSchema = async () => {
+  await pool.query("alter table markets add column if not exists settled_side text check (settled_side in ('yes', 'no'))");
+  await pool.query('alter table markets add column if not exists settled_at timestamptz');
+  await pool.query('alter table bets add column if not exists odds numeric(12, 4)');
+  await pool.query("update bets set odds = 2.0 where odds is null");
+  await pool.query("create unique index if not exists wallet_transactions_settlement_payout_ref_idx on wallet_transactions(reference_id, kind) where kind = 'settlement_payout'");
+};

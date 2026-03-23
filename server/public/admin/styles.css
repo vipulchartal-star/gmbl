@@ -256,3 +256,23 @@ input:focus {
     grid-template-columns: 1fr;
   }
 }
+
+.market-card {
+  padding: 14px;
+}
+
+.market-card strong,
+.market-card span,
+.market-card div {
+  display: block;
+}
+
+.market-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.market-actions button {
+  flex: 1;
+}

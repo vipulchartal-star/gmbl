@@ -18,6 +18,8 @@ create table if not exists markets (
   yes_pool numeric(12, 2) not null default 0,
   no_pool numeric(12, 2) not null default 0,
   total_bets integer not null default 0,
+  settled_side text check (settled_side in ('yes', 'no')),
+  settled_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -28,6 +30,7 @@ create table if not exists bets (
   user_id uuid not null references app_users(id) on delete cascade,
   side text not null check (side in ('yes', 'no')),
   amount numeric(12, 2) not null check (amount > 0),
+  odds numeric(12, 4) not null default 2.0,
   created_at timestamptz not null default now()
 );
 
@@ -44,3 +47,4 @@ create table if not exists wallet_transactions (
 
 create index if not exists bets_user_created_at_idx on bets(user_id, created_at desc);
 create index if not exists wallet_transactions_user_created_at_idx on wallet_transactions(user_id, created_at desc);
+create unique index if not exists wallet_transactions_settlement_payout_ref_idx on wallet_transactions(reference_id, kind) where kind = 'settlement_payout';

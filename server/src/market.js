@@ -2,14 +2,20 @@ export const configuredMarkets = [
   {
     slug: 'mi-vs-kkr-toss',
     question: 'MI vs KKR Toss',
+    yesOdds: 1.9,
+    noOdds: 1.92,
   },
   {
     slug: 'mi-vs-kkr-bookmaker',
     question: 'MI vs KKR Bookmaker',
+    yesOdds: 2.18,
+    noOdds: 1.78,
   },
   {
     slug: 'mi-vs-kkr-match-odds',
     question: 'MI vs KKR Match Odds',
+    yesOdds: 2.06,
+    noOdds: 1.84,
   },
 ];
 
@@ -25,10 +31,14 @@ export const sanitizeMarket = (row) => ({
   noPool: Number(row.no_pool),
   totalPool: Number(row.yes_pool) + Number(row.no_pool),
   totalBets: row.total_bets,
+  settledSide: row.settled_side,
+  settledAt: row.settled_at,
   updatedAt: row.updated_at,
 });
 
 export const findMarketDefinition = (slug) => configuredMarkets.find((market) => market.slug === slug) ?? null;
+
+export const oddsForSide = (marketDefinition, side) => (side === 'yes' ? marketDefinition.yesOdds : marketDefinition.noOdds);
 
 export const ensureConfiguredMarkets = async (client) => {
   for (const market of configuredMarkets) {

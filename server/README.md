@@ -29,6 +29,8 @@ Node + Postgres backend for the betting app.
 - `POST /bets`
 - `GET /bets/me`
 - `GET /admin`
+- `GET /admin/markets`
+- `POST /admin/markets/:marketSlug/settle`
 - `GET /admin/users/search?q=<login>`
 - `GET /admin/users/:userId`
 - `POST /admin/users/:userId/balance`
@@ -51,7 +53,6 @@ This is much safer than the Firebase-client-only version, but it is still not li
 
 - rate limiting
 - stronger admin authorization than a shared secret
-- market settlement logic
 - HTTPS in production
 - proper secret rotation
 - monitoring and backups

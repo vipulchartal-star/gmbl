@@ -4,8 +4,8 @@ import { fileURLToPath } from 'node:url';
 
 import { issueToken, requireAuth } from './auth.js';
 import { config } from './config.js';
-import { pool, withTransaction } from './db.js';
-import { ensureConfiguredMarkets, ensureMarketBySlug, findMarketDefinition, sanitizeMarket } from './market.js';
+import { ensureSchema, pool, withTransaction } from './db.js';
+import { ensureConfiguredMarkets, ensureMarketBySlug, findMarketDefinition, oddsForSide, sanitizeMarket } from './market.js';
 import { hashPassword, verifyPassword } from './password.js';
 
 const app = express();
@@ -233,6 +233,13 @@ app.get('/me', requireAuth, async (req, res) => {
   });
 });
 
+app.get('/admin/markets', requireAdmin, async (_req, res) => {
+  const markets = await withTransaction((client) => ensureConfiguredMarkets(client));
+  res.json({
+    markets: markets.map((market) => sanitizeMarket(market)),
+  });
+});
+
 app.get('/admin/users/search', requireAdmin, async (req, res) => {
   const query = String(req.query.q ?? '').trim().toLowerCase();
 
@@ -379,6 +386,10 @@ app.post('/bets', requireAuth, async (req, res) => {
         throw new Error('MARKET_NOT_FOUND');
       }
 
+      if (market.settled_at || market.status != 'open') {
+        throw new Error('MARKET_CLOSED');
+      }
+
       const userResult = await client.query(
         'select id, login_id, username, balance from app_users where id = $1 for update',
         [req.auth.sub],
@@ -395,11 +406,12 @@ app.post('/bets', requireAuth, async (req, res) => {
       }
 
       const nextBalance = balance - amount;
+      const odds = oddsForSide(marketDefinition, side);
       const betResult = await client.query(
-        `insert into bets (market_slug, user_id, side, amount)
-         values ($1, $2, $3, $4)
-         returning id, market_slug, side, amount, created_at`,
-        [market.slug, user.id, side, amount],
+        `insert into bets (market_slug, user_id, side, amount, odds)
+         values ($1, $2, $3, $4, $5)
+         returning id, market_slug, side, amount, odds, created_at`,
+        [market.slug, user.id, side, amount, odds],
       );
 
       await client.query(
@@ -457,12 +469,120 @@ app.post('/bets', requireAuth, async (req, res) => {
       return;
     }
 
+    if (error instanceof Error && error.message === 'MARKET_CLOSED') {
+      res.status(409).json({ error: 'Market is closed.' });
+      return;
+    }
+
     if (error instanceof Error && error.message === 'INSUFFICIENT_BALANCE') {
       res.status(409).json({ error: 'Insufficient balance.' });
       return;
     }
 
     res.status(500).json({ error: 'Bet placement failed.' });
+  }
+});
+
+app.post('/admin/markets/:marketSlug/settle', requireAdmin, async (req, res) => {
+  const marketSlug = String(req.params.marketSlug ?? '').trim();
+  const winningSide = req.body.side;
+  const marketDefinition = findMarketDefinition(marketSlug);
+
+  if (!marketDefinition || !(winningSide === 'yes' || winningSide === 'no')) {
+    res.status(400).json({ error: 'Invalid settlement payload.' });
+    return;
+  }
+
+  try {
+    const result = await withTransaction(async (client) => {
+      const marketResult = await client.query(
+        'select * from markets where slug = $1 for update',
+        [marketSlug],
+      );
+      const market = marketResult.rows[0];
+
+      if (!market) {
+        throw new Error('MARKET_NOT_FOUND');
+      }
+
+      if (market.settled_at) {
+        throw new Error('MARKET_ALREADY_SETTLED');
+      }
+
+      const winningBetsResult = await client.query(
+        `select id, user_id, amount, coalesce(odds, 2.0) as odds
+         from bets
+         where market_slug = $1 and side = $2
+         order by created_at asc`,
+        [marketSlug, winningSide],
+      );
+
+      let payoutCount = 0;
+      let totalPayout = 0;
+
+      for (const bet of winningBetsResult.rows) {
+        const payout = Number((Number(bet.amount) * Number(bet.odds)).toFixed(2));
+        const userResult = await client.query(
+          'select id, balance from app_users where id = $1 for update',
+          [bet.user_id],
+        );
+        const user = userResult.rows[0];
+
+        if (!user) {
+          continue;
+        }
+
+        const nextBalance = Number((Number(user.balance) + payout).toFixed(2));
+
+        await client.query(
+          `update app_users
+           set balance = $2, updated_at = now()
+           where id = $1`,
+          [user.id, nextBalance],
+        );
+
+        await client.query(
+          `insert into wallet_transactions (user_id, kind, amount_delta, balance_after, reference_id, note)
+           values ($1, 'settlement_payout', $2, $3, $4, $5)`,
+          [user.id, payout, nextBalance, bet.id, marketDefinition.question + ' settlement payout'],
+        );
+
+        payoutCount += 1;
+        totalPayout += payout;
+      }
+
+      const settledResult = await client.query(
+        `update markets
+         set status = 'settled',
+             settled_side = $2,
+             settled_at = now(),
+             updated_at = now()
+         where slug = $1
+         returning *`,
+        [marketSlug, winningSide],
+      );
+
+      return {
+        market: sanitizeMarket(settledResult.rows[0]),
+        payoutCount,
+        totalPayout: Number(totalPayout.toFixed(2)),
+      };
+    });
+
+    publishMarket(result.market);
+    res.json(result);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'MARKET_NOT_FOUND') {
+      res.status(404).json({ error: 'Market not found.' });
+      return;
+    }
+
+    if (error instanceof Error && error.message === 'MARKET_ALREADY_SETTLED') {
+      res.status(409).json({ error: 'Market already settled.' });
+      return;
+    }
+
+    res.status(500).json({ error: 'Failed to settle market.' });
   }
 });
 
@@ -493,6 +613,7 @@ app.use((error, _req, res, _next) => {
 });
 
 const start = async () => {
+  await ensureSchema();
   await withTransaction((client) => ensureConfiguredMarkets(client));
 
   app.listen(config.port, () => {
