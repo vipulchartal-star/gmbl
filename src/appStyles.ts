@@ -26,6 +26,7 @@ export const styles = StyleSheet.create({
   },
   feedHeader: {
     gap: 4,
+    position: 'relative',
   },
   eyebrow: {
     color: '#f97316',
@@ -110,6 +111,11 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     gap: 12,
   },
+  accountActions: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 8,
+  },
   accountSlimMeta: {
     alignItems: 'center',
     flex: 1,
@@ -130,6 +136,22 @@ export const styles = StyleSheet.create({
     color: '#cbd5e1',
     fontSize: 13,
     fontWeight: '700',
+  },
+  topBarPill: {
+    backgroundColor: 'rgba(30, 41, 59, 0.7)',
+    borderRadius: 999,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  topBarPillActive: {
+    backgroundColor: 'rgba(249, 115, 22, 0.22)',
+  },
+  topBarPillText: {
+    color: '#e2e8f0',
+    fontSize: 12,
+    fontWeight: '800',
+    letterSpacing: 0.4,
+    textTransform: 'uppercase',
   },
   inlineLogoutButton: {
     backgroundColor: 'rgba(30, 41, 59, 0.7)',
@@ -439,6 +461,13 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
     textAlign: 'center',
     textTransform: 'uppercase',
+  },
+  betSlipsPopover: {
+    position: 'absolute',
+    right: 0,
+    top: 52,
+    zIndex: 10,
+    width: '100%',
   },
   betSlipsCard: {
     backgroundColor: '#0f172a',

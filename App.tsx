@@ -64,6 +64,7 @@ export default function App() {
   const [session, setSession] = useState<SessionState | null>(null);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [betSlips, setBetSlips] = useState<BetSlip[]>([]);
+  const [betSlipsOpen, setBetSlipsOpen] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [authDebugText, setAuthDebugText] = useState<string | null>(null);
 
@@ -228,6 +229,7 @@ export default function App() {
   };
 
   const logout = async () => {
+    setBetSlipsOpen(false);
     await persistSession(null);
   };
 
@@ -314,9 +316,20 @@ export default function App() {
       };
 
       setSession(nextSession);
-      setMarkets((currentMarkets) =>
-        currentMarkets.map((market) => (market.slug === response.market.slug ? response.market : market)),
-      );
+      setMarkets((currentMarkets) => {
+        const updatedMarkets = currentMarkets.map((market) => (market.slug === response.market.slug ? response.market : market));
+        const betMarketIndex = updatedMarkets.findIndex((market) => market.slug === response.market.slug);
+
+        if (betMarketIndex === -1) {
+          return updatedMarkets;
+        }
+
+        const nextMarkets = updatedMarkets.slice();
+        const [betMarket] = nextMarkets.splice(betMarketIndex, 1);
+        nextMarkets.push(betMarket);
+        return nextMarkets;
+      });
+      setCurrentIndex((index) => (index >= betCards.length - 1 ? 0 : index));
       setBetSlips((currentSlips) => [response.bet, ...currentSlips].slice(0, 50));
       await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
       setErrorText(null);
@@ -351,13 +364,17 @@ export default function App() {
               onLogout={logout}
               onSignupMode={() => setAuthMode('signup')}
               onSubmit={submitAuth}
+              onToggleBetSlips={() => setBetSlipsOpen((open) => !open)}
               onUploadLoginFile={uploadLoginFile}
               password={password}
               session={session}
               sessionLoading={sessionLoading}
+              betSlipCount={betSlips.length}
+              betSlipsOpen={betSlipsOpen}
             />
             <SwipeIndicator currentIndex={currentIndex} total={betCards.length} />
           </View>
+          {betSlipsOpen ? <BetSlipsPanel slips={betSlips} markets={markets} loading={betSlipsLoading} /> : null}
           {marketsLoading ? (
             <View style={styles.loadingWrap}>
               <ActivityIndicator size="small" color="#f97316" />
@@ -367,6 +384,7 @@ export default function App() {
               bets={betCards}
               betAmount={betAmount}
               cardHeight={cardHeight}
+              currentIndex={currentIndex}
               onChangeBetAmount={setBetAmount}
               onIndexChange={setCurrentIndex}
               onPlaceBet={placeBet}
@@ -378,7 +396,6 @@ export default function App() {
               <Text style={styles.warningText}>No betting markets are available from the server.</Text>
             </View>
           )}
-          <BetSlipsPanel slips={betSlips} markets={markets} loading={betSlipsLoading} />
           {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
           {errorText ? <WarningCard errorText={errorText} /> : null}
         </View>

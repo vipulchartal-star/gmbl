@@ -36,10 +36,13 @@ type AccountCardProps = {
   onLogout: () => void;
   onSignupMode: () => void;
   onSubmit: () => void;
+  onToggleBetSlips?: () => void;
   onUploadLoginFile: () => void;
   password: string;
   session: SessionState | null;
   sessionLoading: boolean;
+  betSlipCount?: number;
+  betSlipsOpen?: boolean;
 };
 
 export function AccountCard({
@@ -53,10 +56,13 @@ export function AccountCard({
   onLogout,
   onSignupMode,
   onSubmit,
+  onToggleBetSlips,
   onUploadLoginFile,
   password,
   session,
   sessionLoading,
+  betSlipCount = 0,
+  betSlipsOpen = false,
 }: AccountCardProps) {
   const isSignup = authMode === 'signup';
 
@@ -75,9 +81,14 @@ export function AccountCard({
               Bal <AnimatedNumber value={session.user.balance} decimals={2} />
             </Text>
           </View>
-          <Pressable style={styles.inlineLogoutButton} onPress={onLogout}>
-            <Text style={styles.inlineLogoutText}>Logout</Text>
-          </Pressable>
+          <View style={styles.accountActions}>
+            <Pressable style={[styles.topBarPill, betSlipsOpen ? styles.topBarPillActive : null]} onPress={onToggleBetSlips}>
+              <Text style={styles.topBarPillText}>Slips {betSlipCount}</Text>
+            </Pressable>
+            <Pressable style={styles.inlineLogoutButton} onPress={onLogout}>
+              <Text style={styles.inlineLogoutText}>Logout</Text>
+            </Pressable>
+          </View>
         </View>
       ) : (
         <>
@@ -132,6 +143,7 @@ type BetSwiperProps = {
   bets: BetCard[];
   betAmount: string;
   cardHeight: number;
+  currentIndex: number;
   onChangeBetAmount: (value: string) => void;
   onIndexChange: (index: number) => void;
   onPlaceBet: (bet: BetCard, choiceKey: BetChoiceKey) => void;
@@ -151,13 +163,21 @@ export function BetSwiper({
   bets,
   betAmount,
   cardHeight,
+  currentIndex,
   onChangeBetAmount,
   onIndexChange,
   onPlaceBet,
   submittingBetId,
 }: BetSwiperProps) {
+  const scrollRef = useRef<ScrollView | null>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ y: currentIndex * cardHeight, animated: true });
+  }, [cardHeight, currentIndex, bets]);
+
   return (
     <ScrollView
+      ref={scrollRef}
       style={styles.swiper}
       contentContainerStyle={styles.swiperContent}
       pagingEnabled
@@ -270,41 +290,41 @@ export function BetSlipsPanel({ slips, markets, loading }: BetSlipsPanelProps) {
   const findMarket = (marketSlug: string) => markets.find((market) => market.slug === marketSlug);
 
   return (
-    <View style={styles.betSlipsCard}>
-      <View style={styles.betSlipsHeader}>
-        <Text style={styles.betSlipsTitle}>Bet Slips</Text>
-        <Text style={styles.betSlipsCount}>{slips.length}</Text>
-      </View>
-      {loading ? (
-        <View style={styles.loadingWrap}>
-          <ActivityIndicator size="small" color="#f97316" />
+    <View style={styles.betSlipsPopover}>
+      <View style={styles.betSlipsCard}>
+        <View style={styles.betSlipsHeader}>
+          <Text style={styles.betSlipsTitle}>Bet Slips</Text>
+          <Text style={styles.betSlipsCount}>{slips.length}</Text>
         </View>
-      ) : !slips.length ? (
-        <Text style={styles.betSlipsEmpty}>Your placed bets will show here.</Text>
-      ) : (
-        <ScrollView style={styles.betSlipsList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-          {slips.map((slip) => {
-            const market = findMarket(slip.marketSlug);
-            const title = market ? (slip.side === 'yes' ? market.backLabel : market.layLabel) : slip.marketSlug;
-            const returns = slip.amount * slip.odds;
+        {loading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="small" color="#f97316" />
+          </View>
+        ) : !slips.length ? (
+          <Text style={styles.betSlipsEmpty}>Your placed bets will show here.</Text>
+        ) : (
+          <ScrollView style={styles.betSlipsList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+            {slips.map((slip) => {
+              const market = findMarket(slip.marketSlug);
+              const title = market ? (slip.side === 'yes' ? market.backLabel : market.layLabel) : slip.marketSlug;
+              const returns = slip.amount * slip.odds;
 
-            return (
-              <View key={slip.id} style={styles.betSlipItem}>
-                <View style={styles.betSlipTopRow}>
-                  <Text style={styles.betSlipTitle}>{title}</Text>
-                  <Text style={styles.betSlipAmount}>{slip.amount.toFixed(2)}</Text>
+              return (
+                <View key={slip.id} style={styles.betSlipItem}>
+                  <View style={styles.betSlipTopRow}>
+                    <Text style={styles.betSlipTitle}>{title}</Text>
+                    <Text style={styles.betSlipAmount}>{slip.amount.toFixed(2)}</Text>
+                  </View>
+                  <Text style={styles.betSlipMeta}>
+                    Odds {slip.odds.toFixed(2)}x • Return {returns.toFixed(2)}
+                  </Text>
+                  <Text style={styles.betSlipMeta}>{new Date(slip.createdAt).toLocaleString()}</Text>
                 </View>
-                <Text style={styles.betSlipMeta}>
-                  Odds {slip.odds.toFixed(2)}x • Return {returns.toFixed(2)}
-                </Text>
-                <Text style={styles.betSlipMeta}>
-                  {new Date(slip.createdAt).toLocaleString()}
-                </Text>
-              </View>
-            );
-          })}
-        </ScrollView>
-      )}
+              );
+            })}
+          </ScrollView>
+        )}
+      </View>
     </View>
   );
 }
