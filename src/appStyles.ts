@@ -257,6 +257,34 @@ export const styles = StyleSheet.create({
     fontSize: 13,
     lineHeight: 18,
   },
+  returnGrid: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  returnCard: {
+    flex: 1,
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 16,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  returnLabel: {
+    color: '#cbd5e1',
+    fontSize: 11,
+    fontWeight: '700',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  returnValue: {
+    color: '#f8fafc',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  settlementNote: {
+    color: '#fca5a5',
+    fontSize: 12,
+    lineHeight: 18,
+  },
   betAmountInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderColor: 'rgba(255, 255, 255, 0.18)',

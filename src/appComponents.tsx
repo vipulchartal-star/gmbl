@@ -161,6 +161,10 @@ export function BetSwiper({
       {bets.map((bet, index) => {
         const isBack = bet.side === 'back';
         const isSubmitting = submittingBetId === bet.id;
+        const amountValue = Number(betAmount);
+        const stake = Number.isFinite(amountValue) && amountValue > 0 ? amountValue : 0;
+        const estimatedReturn = stake * bet.odds;
+        const estimatedProfit = estimatedReturn - stake;
 
         return (
           <View key={bet.id} style={[styles.betSlide, { minHeight: cardHeight }]}>
@@ -186,6 +190,21 @@ export function BetSwiper({
                   <Text style={styles.betMeaningTitle}>{isBack ? 'Back means you bet for it to happen.' : 'Lay means you bet against it happening.'}</Text>
                   <Text style={styles.betMeaningText}>{isBack ? 'If this outcome happens, your back bet is the winning side.' : 'If this outcome does not happen, your lay bet is the winning side.'}</Text>
                 </View>
+                <View style={styles.returnGrid}>
+                  <View style={styles.returnCard}>
+                    <Text style={styles.returnLabel}>Price</Text>
+                    <Text style={styles.returnValue}>{bet.odds.toFixed(2)}x</Text>
+                  </View>
+                  <View style={styles.returnCard}>
+                    <Text style={styles.returnLabel}>Est. Return</Text>
+                    <Text style={styles.returnValue}>{estimatedReturn.toFixed(2)}</Text>
+                  </View>
+                  <View style={styles.returnCard}>
+                    <Text style={styles.returnLabel}>Est. Profit</Text>
+                    <Text style={styles.returnValue}>{estimatedProfit.toFixed(2)}</Text>
+                  </View>
+                </View>
+                <Text style={styles.settlementNote}>Display only. Market settlement and payout credit are not implemented on the server yet.</Text>
                 <TextInput
                   keyboardType="numeric"
                   value={betAmount}

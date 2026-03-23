@@ -9,6 +9,7 @@ export type BetListItem = {
   marketSlug: string;
   side: BetDirection;
   apiSide: ApiBetSide;
+  odds: number;
   label: string;
 };
 
@@ -67,6 +68,7 @@ export const betList: BetListItem[] = [
     marketSlug: 'mi-vs-kkr-toss',
     side: 'back',
     apiSide: 'yes',
+    odds: 1.9,
     label: 'MI vs KKR Toss Back',
   },
   {
@@ -76,6 +78,7 @@ export const betList: BetListItem[] = [
     marketSlug: 'mi-vs-kkr-toss',
     side: 'lay',
     apiSide: 'no',
+    odds: 1.92,
     label: 'MI vs KKR Toss Lay',
   },
   {
@@ -85,6 +88,7 @@ export const betList: BetListItem[] = [
     marketSlug: 'mi-vs-kkr-bookmaker',
     side: 'back',
     apiSide: 'yes',
+    odds: 2.18,
     label: 'MI vs KKR Bookmaker Back',
   },
   {
@@ -94,6 +98,7 @@ export const betList: BetListItem[] = [
     marketSlug: 'mi-vs-kkr-bookmaker',
     side: 'lay',
     apiSide: 'no',
+    odds: 1.78,
     label: 'MI vs KKR Bookmaker Lay',
   },
   {
@@ -103,6 +108,7 @@ export const betList: BetListItem[] = [
     marketSlug: 'mi-vs-kkr-match-odds',
     side: 'back',
     apiSide: 'yes',
+    odds: 2.06,
     label: 'MI vs KKR Match Odds Back',
   },
   {
@@ -112,6 +118,7 @@ export const betList: BetListItem[] = [
     marketSlug: 'mi-vs-kkr-match-odds',
     side: 'lay',
     apiSide: 'no',
+    odds: 1.84,
     label: 'MI vs KKR Match Odds Lay',
   },
 ];
