@@ -11,6 +11,9 @@ export type BetListItem = {
   apiSide: ApiBetSide;
   odds: number;
   label: string;
+  outcomeLabel: string;
+  meaning: string;
+  winText: string;
 };
 
 export type SessionUser = {
@@ -69,7 +72,10 @@ export const betList: BetListItem[] = [
     side: 'back',
     apiSide: 'yes',
     odds: 1.9,
-    label: 'MI vs KKR Toss Back',
+    label: 'Back MI to win the toss',
+    outcomeLabel: 'MI wins the toss',
+    meaning: 'Back means you are betting for MI to win the toss.',
+    winText: 'You win if MI wins the toss. You lose if MI does not win the toss.',
   },
   {
     id: 'mi-vs-kkr-toss-lay',
@@ -79,7 +85,10 @@ export const betList: BetListItem[] = [
     side: 'lay',
     apiSide: 'no',
     odds: 1.92,
-    label: 'MI vs KKR Toss Lay',
+    label: 'Lay MI to win the toss',
+    outcomeLabel: 'MI wins the toss',
+    meaning: 'Lay means you are betting against MI winning the toss.',
+    winText: 'You win if MI does not win the toss. You lose if MI wins the toss.',
   },
   {
     id: 'mi-vs-kkr-bookmaker-back',
@@ -89,7 +98,10 @@ export const betList: BetListItem[] = [
     side: 'back',
     apiSide: 'yes',
     odds: 2.18,
-    label: 'MI vs KKR Bookmaker Back',
+    label: 'Back MI to win',
+    outcomeLabel: 'MI wins the match',
+    meaning: 'Back means you are betting for MI to win the match.',
+    winText: 'You win if MI wins the match. You lose if MI does not win the match.',
   },
   {
     id: 'mi-vs-kkr-bookmaker-lay',
@@ -99,7 +111,10 @@ export const betList: BetListItem[] = [
     side: 'lay',
     apiSide: 'no',
     odds: 1.78,
-    label: 'MI vs KKR Bookmaker Lay',
+    label: 'Lay MI to win',
+    outcomeLabel: 'MI wins the match',
+    meaning: 'Lay means you are betting against MI winning the match.',
+    winText: 'You win if MI does not win the match. You lose if MI wins the match.',
   },
   {
     id: 'mi-vs-kkr-match-odds-back',
@@ -109,7 +124,10 @@ export const betList: BetListItem[] = [
     side: 'back',
     apiSide: 'yes',
     odds: 2.06,
-    label: 'MI vs KKR Match Odds Back',
+    label: 'Back MI to win',
+    outcomeLabel: 'MI wins the match',
+    meaning: 'Back means you are betting for MI to win the match.',
+    winText: 'You win if MI wins the match. You lose if MI does not win the match.',
   },
   {
     id: 'mi-vs-kkr-match-odds-lay',
@@ -119,6 +137,9 @@ export const betList: BetListItem[] = [
     side: 'lay',
     apiSide: 'no',
     odds: 1.84,
-    label: 'MI vs KKR Match Odds Lay',
+    label: 'Lay MI to win',
+    outcomeLabel: 'MI wins the match',
+    meaning: 'Lay means you are betting against MI winning the match.',
+    winText: 'You win if MI does not win the match. You lose if MI wins the match.',
   },
 ];

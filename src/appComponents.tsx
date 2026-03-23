@@ -177,7 +177,7 @@ export function BetSwiper({
                 <Text style={styles.betHeroMatch}>{bet.match}</Text>
                 <Text style={styles.betHeroTitle}>{bet.side.toUpperCase()}</Text>
                 <Text style={styles.betHeroLabel}>{bet.label}</Text>
-                <Text style={styles.betHeroHint}>Swipe for the next bet. Place this one from the panel below.</Text>
+                <Text style={styles.betHeroHint}>Outcome: {bet.outcomeLabel}</Text>
               </View>
               <View style={styles.betActionPanel}>
                 <View style={styles.betActionHeader}>
@@ -187,8 +187,8 @@ export function BetSwiper({
                   </View>
                 </View>
                 <View style={styles.betMeaningBox}>
-                  <Text style={styles.betMeaningTitle}>{isBack ? 'Back means you bet for it to happen.' : 'Lay means you bet against it happening.'}</Text>
-                  <Text style={styles.betMeaningText}>{isBack ? 'If this outcome happens, your back bet is the winning side.' : 'If this outcome does not happen, your lay bet is the winning side.'}</Text>
+                  <Text style={styles.betMeaningTitle}>{bet.meaning}</Text>
+                  <Text style={styles.betMeaningText}>{bet.winText}</Text>
                 </View>
                 <View style={styles.returnGrid}>
                   <View style={styles.returnCard}>
@@ -204,7 +204,7 @@ export function BetSwiper({
                     <Text style={styles.returnValue}>{estimatedProfit.toFixed(2)}</Text>
                   </View>
                 </View>
-                <Text style={styles.settlementNote}>Display only. Market settlement and payout credit are not implemented on the server yet.</Text>
+                <Text style={styles.settlementNote}>Returns shown here are based on the displayed price for this exact outcome.</Text>
                 <TextInput
                   keyboardType="numeric"
                   value={betAmount}
