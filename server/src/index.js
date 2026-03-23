@@ -12,13 +12,10 @@ const app = express();
 const marketSubscribers = new Set();
 const adminDir = fileURLToPath(new URL('../public/admin', import.meta.url));
 const adminIndexFile = fileURLToPath(new URL('../public/admin/index.html', import.meta.url));
-const deckDir = fileURLToPath(new URL('../public/deck', import.meta.url));
-const deckIndexFile = fileURLToPath(new URL('../public/deck/index.html', import.meta.url));
 
 app.use(cors({ origin: config.corsOrigin === '*' ? true : config.corsOrigin }));
 app.use(express.json());
 app.use('/admin', express.static(adminDir));
-app.use('/deck', express.static(deckDir));
 
 const logAuth = (event, details = {}) => {
   console.log(`[auth] ${event}`, details);
@@ -69,9 +66,6 @@ app.get('/admin', (_req, res) => {
   res.sendFile(adminIndexFile);
 });
 
-app.get('/deck', (_req, res) => {
-  res.sendFile(deckIndexFile);
-});
 
 app.get('/health', async (_req, res) => {
   const db = await pool.query('select now() as now');

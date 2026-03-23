@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, SafeAreaView, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { AccountCard, BetSlipsPanel, BetSwiper, ScreenHeader, SwipeIndicator, WarningCard } from './src/appComponents';
+import { PitchDeckScreen } from './src/pitchDeckScreen';
 import { styles } from './src/appStyles';
 import {
   buildBetCards,
@@ -50,6 +51,16 @@ const sessionStorage = {
 };
 
 export default function App() {
+  const pathname = Platform.OS === 'web' && typeof globalThis.location !== 'undefined' ? globalThis.location.pathname : '/';
+
+  if (pathname === '/deck') {
+    return <PitchDeckScreen />;
+  }
+
+  return <MainApp />;
+}
+
+function MainApp() {
   const { height } = useWindowDimensions();
   const [sessionLoading, setSessionLoading] = useState(true);
   const [marketsLoading, setMarketsLoading] = useState(true);
