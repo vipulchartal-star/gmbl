@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { styles } from './appStyles';
 import { chipAmounts, type AuthMode, type BetCard, type BetChoiceKey, type SessionState } from './appTypes';
@@ -171,6 +171,7 @@ export function BetSwiper({
         const stake = Number.isFinite(amountValue) && amountValue > 0 ? amountValue : 0;
         const estimatedReturn = stake * choice.odds;
         const estimatedProfit = estimatedReturn - stake;
+        const helpText = choice.meaning + String.fromCharCode(10, 10) + choice.winText;
 
         return (
           <View key={bet.id} style={[styles.betSlide, { minHeight: cardHeight }]}> 
@@ -188,8 +189,16 @@ export function BetSwiper({
               <View style={styles.betActionPanel}>
                 <View style={styles.betActionHeader}>
                   <Text style={styles.betActionTitle}>Stake</Text>
-                  <View style={[styles.betSideBadge, isBack ? styles.betSideBack : styles.betSideLay]}>
-                    <Text style={styles.betSideBadgeText}>{choice.direction.toUpperCase()}</Text>
+                  <View style={styles.betActionHeaderRight}>
+                    <Pressable
+                      style={styles.helpButton}
+                      onPress={() => Alert.alert(choice.label, helpText)}
+                    >
+                      <Text style={styles.helpButtonText}>?</Text>
+                    </Pressable>
+                    <View style={[styles.betSideBadge, isBack ? styles.betSideBack : styles.betSideLay]}>
+                      <Text style={styles.betSideBadgeText}>{choice.direction.toUpperCase()}</Text>
+                    </View>
                   </View>
                 </View>
                 <View style={styles.choiceRow}>
@@ -207,10 +216,6 @@ export function BetSwiper({
                     <Text style={styles.choiceButtonLabel}>Lay</Text>
                     <Text style={styles.choiceButtonValue}>{bet.lay.odds.toFixed(2)}</Text>
                   </Pressable>
-                </View>
-                <View style={styles.betMeaningBox}>
-                  <Text style={styles.betMeaningTitle}>{choice.meaning}</Text>
-                  <Text style={styles.betMeaningText}>{choice.winText}</Text>
                 </View>
                 <View style={styles.returnGrid}>
                   <View style={styles.returnCard}>

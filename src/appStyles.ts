@@ -236,10 +236,30 @@ export const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
   },
+  betActionHeaderRight: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    gap: 10,
+  },
   betActionTitle: {
     color: '#f8fafc',
     fontSize: 18,
     fontWeight: '800',
+  },
+  helpButton: {
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: 999,
+    borderWidth: 1,
+    height: 30,
+    justifyContent: 'center',
+    width: 30,
+  },
+  helpButtonText: {
+    color: '#f8fafc',
+    fontSize: 15,
+    fontWeight: '900',
   },
   choiceRow: {
     flexDirection: 'row',
@@ -272,24 +292,6 @@ export const styles = StyleSheet.create({
     color: '#ffffff',
     fontSize: 22,
     fontWeight: '900',
-  },
-  betMeaningBox: {
-    backgroundColor: 'rgba(255, 255, 255, 0.06)',
-    borderRadius: 16,
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-  },
-  betMeaningTitle: {
-    color: '#f8fafc',
-    fontSize: 13,
-    fontWeight: '800',
-    lineHeight: 18,
-  },
-  betMeaningText: {
-    color: '#cbd5e1',
-    fontSize: 13,
-    lineHeight: 18,
   },
   returnGrid: {
     flexDirection: 'row',
