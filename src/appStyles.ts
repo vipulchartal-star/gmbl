@@ -16,67 +16,16 @@ export const styles = StyleSheet.create({
     paddingVertical: 28,
     gap: 18,
   },
-  posterHero: {
-    minHeight: 420,
-    borderRadius: 30,
-    overflow: 'hidden',
-    justifyContent: 'flex-end',
+  feedScreen: {
+    flex: 1,
     backgroundColor: '#08111f',
-  },
-  posterHeroImage: {
-    resizeMode: 'cover',
-  },
-  posterHeroShade: {
-    minHeight: 420,
-    justifyContent: 'flex-end',
-    paddingHorizontal: 22,
-    paddingVertical: 22,
-    backgroundColor: 'rgba(7, 11, 14, 0.22)',
-  },
-  posterEyebrow: {
-    color: '#86efac',
-    fontSize: 12,
-    fontWeight: '800',
-    letterSpacing: 2,
-    marginBottom: 10,
-    textTransform: 'uppercase',
-  },
-  posterTitle: {
-    color: '#ffffff',
-    fontSize: 34,
-    fontWeight: '900',
-    lineHeight: 38,
-    maxWidth: '78%',
-    textShadowColor: 'rgba(0, 0, 0, 0.45)',
-    textShadowOffset: { width: 0, height: 3 },
-    textShadowRadius: 10,
-  },
-  posterMetaRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
+    paddingHorizontal: 12,
+    paddingTop: 10,
+    paddingBottom: 12,
     gap: 10,
-    marginTop: 18,
   },
-  posterPill: {
-    backgroundColor: 'rgba(7, 17, 27, 0.68)',
-    borderColor: 'rgba(255, 255, 255, 0.16)',
-    borderRadius: 16,
-    borderWidth: 1,
-    minWidth: 102,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-  },
-  posterPillLabel: {
-    color: '#94a3b8',
-    fontSize: 11,
-    fontWeight: '700',
-    marginBottom: 4,
-    textTransform: 'uppercase',
-  },
-  posterPillValue: {
-    color: '#f8fafc',
-    fontSize: 16,
-    fontWeight: '800',
+  feedHeader: {
+    gap: 8,
   },
   eyebrow: {
     color: '#f97316',
@@ -103,14 +52,6 @@ export const styles = StyleSheet.create({
     padding: 18,
     gap: 14,
   },
-  cardCompact: {
-    backgroundColor: 'rgba(8, 22, 18, 0.9)',
-    borderColor: 'rgba(94, 234, 212, 0.14)',
-    borderRadius: 22,
-    borderWidth: 1,
-    padding: 16,
-    gap: 12,
-  },
   sessionStrip: {
     alignItems: 'center',
     backgroundColor: 'rgba(8, 22, 18, 0.92)',
@@ -122,13 +63,6 @@ export const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  sectionLabel: {
-    color: '#d1fae5',
-    fontSize: 13,
-    fontWeight: '700',
-    letterSpacing: 0.8,
-    textTransform: 'uppercase',
   },
   input: {
     backgroundColor: '#111827',
@@ -214,34 +148,140 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
   },
-  betList: {
+  swipeIndicator: {
+    color: '#d1fae5',
+    fontSize: 13,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+  swiper: {
+    flex: 1,
+  },
+  swiperContent: {
+    paddingBottom: 8,
+  },
+  betSlide: {
+    paddingVertical: 4,
+  },
+  betSlideInner: {
+    flex: 1,
+    borderRadius: 28,
+    overflow: 'hidden',
+    justifyContent: 'space-between',
+    padding: 22,
+  },
+  betSlideBack: {
+    backgroundColor: '#0f3d2e',
+  },
+  betSlideLay: {
+    backgroundColor: '#4a1622',
+  },
+  betHeroTop: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  betHeroIndex: {
+    color: '#e2e8f0',
+    fontSize: 13,
+    fontWeight: '700',
+  },
+  betHeroMarket: {
+    color: '#f8fafc',
+    fontSize: 13,
+    fontWeight: '800',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  betHeroBody: {
+    flex: 1,
+    justifyContent: 'center',
     gap: 10,
   },
-  betListItem: {
-    alignItems: 'center',
-    backgroundColor: 'rgba(7, 17, 27, 0.76)',
-    borderColor: 'rgba(148, 163, 184, 0.14)',
-    borderRadius: 18,
+  betHeroMatch: {
+    color: '#cbd5e1',
+    fontSize: 18,
+    fontWeight: '700',
+  },
+  betHeroTitle: {
+    color: '#ffffff',
+    fontSize: 54,
+    fontWeight: '900',
+    letterSpacing: 1,
+  },
+  betHeroLabel: {
+    color: '#ffffff',
+    fontSize: 28,
+    fontWeight: '800',
+    lineHeight: 34,
+  },
+  betHeroHint: {
+    color: '#dbeafe',
+    fontSize: 15,
+    lineHeight: 22,
+    maxWidth: '85%',
+  },
+  betActionPanel: {
+    backgroundColor: 'rgba(8, 15, 23, 0.62)',
+    borderColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 22,
     borderWidth: 1,
+    gap: 14,
+    padding: 16,
+  },
+  betActionHeader: {
+    alignItems: 'center',
     flexDirection: 'row',
-    gap: 12,
     justifyContent: 'space-between',
-    paddingHorizontal: 14,
-    paddingVertical: 14,
   },
-  betListCopy: {
-    flex: 1,
-    gap: 4,
-  },
-  betListTitle: {
+  betActionTitle: {
     color: '#f8fafc',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: '800',
   },
-  betListMeta: {
-    color: '#94a3b8',
-    fontSize: 13,
-    fontWeight: '600',
+  betAmountInput: {
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
+    borderColor: 'rgba(255, 255, 255, 0.18)',
+    borderRadius: 16,
+    borderWidth: 1,
+    color: '#f8fafc',
+    fontSize: 22,
+    fontWeight: '800',
+    paddingHorizontal: 16,
+    paddingVertical: 14,
+  },
+  chipRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  chip: {
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
+    borderRadius: 999,
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+  },
+  chipText: {
+    color: '#f8fafc',
+    fontSize: 14,
+    fontWeight: '700',
+  },
+  placeBetButton: {
+    alignItems: 'center',
+    borderRadius: 18,
+    paddingVertical: 16,
+  },
+  placeBetButtonBack: {
+    backgroundColor: '#22c55e',
+  },
+  placeBetButtonLay: {
+    backgroundColor: '#ef4444',
+  },
+  placeBetButtonText: {
+    color: '#f8fafc',
+    fontSize: 17,
+    fontWeight: '900',
+    letterSpacing: 0.6,
   },
   betSideBadge: {
     borderRadius: 999,

@@ -1,8 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Pressable, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { styles } from './appStyles';
-import { type AuthMode, type BetListItem, type SessionState } from './appTypes';
+import { chipAmounts, type AuthMode, type BetListItem, type SessionState } from './appTypes';
 
 type HeaderProps = {
   authMode: AuthMode;
@@ -12,14 +12,14 @@ type HeaderProps = {
 export function ScreenHeader({ authMode, session }: HeaderProps) {
   return (
     <>
-      <Text style={styles.eyebrow}>{session ? 'Bet List' : 'Login'}</Text>
+      <Text style={styles.eyebrow}>{session ? 'Swipe Bets' : 'Login'}</Text>
       <Text style={styles.title}>{session ? 'GMBL' : authMode === 'signup' ? 'Create Account' : 'Welcome Back'}</Text>
       <Text style={styles.subtitle}>
         {session
-          ? 'View every MI vs KKR market entry in one list.'
+          ? 'One bet per screen. Swipe vertically to move through MI vs KKR markets.'
           : authMode === 'signup'
             ? 'Create your account with only login id and password.'
-            : 'Enter your login id and password. The betting list appears after login.'}
+            : 'Enter your login id and password. After login you can swipe through bets and place one instantly.'}
       </Text>
     </>
   );
@@ -73,7 +73,7 @@ export function AccountCard({
             <Text style={styles.accountBalance}>
               Balance <AnimatedNumber value={session.user.balance} decimals={2} />
             </Text>
-            <Text style={styles.accountStatus}>MI vs KKR markets loaded</Text>
+            <Text style={styles.accountStatus}>Swipe up or down to switch bets</Text>
           </View>
           <Pressable style={styles.inlineLogoutButton} onPress={onLogout}>
             <Text style={styles.inlineLogoutText}>Log Out</Text>
@@ -128,33 +128,93 @@ export function AccountCard({
   );
 }
 
-type BetListCardProps = {
+type BetSwiperProps = {
   bets: BetListItem[];
+  betAmount: string;
+  cardHeight: number;
+  onChangeBetAmount: (value: string) => void;
+  onIndexChange: (index: number) => void;
+  onPlaceBet: (bet: BetListItem) => void;
+  submittingBetId: string | null;
 };
 
-export function BetListCard({ bets }: BetListCardProps) {
+export function BetSwiper({
+  bets,
+  betAmount,
+  cardHeight,
+  onChangeBetAmount,
+  onIndexChange,
+  onPlaceBet,
+  submittingBetId,
+}: BetSwiperProps) {
   return (
-    <View style={styles.cardCompact}>
-      <Text style={styles.sectionLabel}>All Bets</Text>
-      <View style={styles.betList}>
-        {bets.map((bet) => {
-          const isBack = bet.side === 'back';
+    <ScrollView
+      style={styles.swiper}
+      contentContainerStyle={styles.swiperContent}
+      pagingEnabled
+      showsVerticalScrollIndicator={false}
+      onMomentumScrollEnd={(event) => {
+        const nextIndex = Math.round(event.nativeEvent.contentOffset.y / cardHeight);
+        onIndexChange(Math.max(0, Math.min(nextIndex, bets.length - 1)));
+      }}
+    >
+      {bets.map((bet, index) => {
+        const isBack = bet.side === 'back';
+        const isSubmitting = submittingBetId === bet.id;
 
-          return (
-            <View key={bet.id} style={styles.betListItem}>
-              <View style={styles.betListCopy}>
-                <Text style={styles.betListTitle}>{bet.label}</Text>
-                <Text style={styles.betListMeta}>{bet.match} • {bet.market}</Text>
+        return (
+          <View key={bet.id} style={[styles.betSlide, { minHeight: cardHeight }]}>
+            <View style={[styles.betSlideInner, isBack ? styles.betSlideBack : styles.betSlideLay]}>
+              <View style={styles.betHeroTop}>
+                <Text style={styles.betHeroIndex}>{index + 1} / {bets.length}</Text>
+                <Text style={styles.betHeroMarket}>{bet.market}</Text>
               </View>
-              <View style={[styles.betSideBadge, isBack ? styles.betSideBack : styles.betSideLay]}>
-                <Text style={styles.betSideBadgeText}>{bet.side.toUpperCase()}</Text>
+              <View style={styles.betHeroBody}>
+                <Text style={styles.betHeroMatch}>{bet.match}</Text>
+                <Text style={styles.betHeroTitle}>{bet.side.toUpperCase()}</Text>
+                <Text style={styles.betHeroLabel}>{bet.label}</Text>
+                <Text style={styles.betHeroHint}>Swipe for the next bet. Place this one from the panel below.</Text>
+              </View>
+              <View style={styles.betActionPanel}>
+                <View style={styles.betActionHeader}>
+                  <Text style={styles.betActionTitle}>Stake</Text>
+                  <View style={[styles.betSideBadge, isBack ? styles.betSideBack : styles.betSideLay]}>
+                    <Text style={styles.betSideBadgeText}>{bet.side.toUpperCase()}</Text>
+                  </View>
+                </View>
+                <TextInput
+                  keyboardType="numeric"
+                  value={betAmount}
+                  onChangeText={onChangeBetAmount}
+                  placeholder="10"
+                  placeholderTextColor="#94a3b8"
+                  style={styles.betAmountInput}
+                />
+                <View style={styles.chipRow}>
+                  {chipAmounts.map((amount) => (
+                    <Pressable key={amount} style={styles.chip} onPress={() => onChangeBetAmount(String(amount))}>
+                      <Text style={styles.chipText}>{amount}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+                <Pressable
+                  style={[styles.placeBetButton, isBack ? styles.placeBetButtonBack : styles.placeBetButtonLay]}
+                  disabled={submittingBetId !== null}
+                  onPress={() => onPlaceBet(bet)}
+                >
+                  <Text style={styles.placeBetButtonText}>{isSubmitting ? 'Placing...' : 'Bet ' + bet.side.toUpperCase()}</Text>
+                </Pressable>
               </View>
             </View>
-          );
-        })}
-      </View>
-    </View>
+          </View>
+        );
+      })}
+    </ScrollView>
   );
+}
+
+export function SwipeIndicator({ currentIndex, total }: { currentIndex: number; total: number }) {
+  return <Text style={styles.swipeIndicator}>Bet {currentIndex + 1} of {total}</Text>;
 }
 
 export function WarningCard({ errorText }: { errorText: string }) {
@@ -210,5 +270,5 @@ function AnimatedNumber({
     return () => cancelAnimationFrame(animationFrame);
   }, [value]);
 
-  return <>{`${prefix}${displayValue.toFixed(decimals)}${suffix}`}</>;
+  return <>{prefix + displayValue.toFixed(decimals) + suffix}</>;
 }

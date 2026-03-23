@@ -1,15 +1,17 @@
 import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
-import { useMemo, useState, useEffect } from 'react';
-import { Alert, ImageBackground, Platform, SafeAreaView, ScrollView, Text, View } from 'react-native';
+import { useEffect, useState } from 'react';
+import { Alert, Platform, SafeAreaView, ScrollView, useWindowDimensions, View } from 'react-native';
 
-import { AccountCard, BetListCard, ScreenHeader, WarningCard } from './src/appComponents';
+import { AccountCard, BetSwiper, ScreenHeader, SwipeIndicator, WarningCard } from './src/appComponents';
 import { styles } from './src/appStyles';
 import {
   betList,
   sessionKey,
   type AuthMode,
   type AuthResponse,
+  type BetListItem,
+  type BetResponse,
   type MeResponse,
   type SessionState,
 } from './src/appTypes';
@@ -43,16 +45,20 @@ const sessionStorage = {
 };
 
 export default function App() {
+  const { height } = useWindowDimensions();
   const [sessionLoading, setSessionLoading] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
+  const [betAmount, setBetAmount] = useState('10');
+  const [submittingBetId, setSubmittingBetId] = useState<string | null>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
   const [session, setSession] = useState<SessionState | null>(null);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [authDebugText, setAuthDebugText] = useState<string | null>(null);
 
-  const marketCount = useMemo(() => new Set(betList.map((bet) => bet.market)).size, []);
+  const cardHeight = Math.max(420, height - 160);
 
   const persistSession = async (nextSession: SessionState | null) => {
     setSession(nextSession);
@@ -124,8 +130,8 @@ export default function App() {
       const message = error instanceof Error ? error.message : 'Authentication failed.';
       const debugMessage =
         error instanceof ApiError
-          ? `mode=${authMode} status=${error.status} path=${error.details?.path ?? 'unknown'} baseUrl=${error.details?.baseUrl ?? apiConfig.baseUrl} message=${message}`
-          : `mode=${authMode} baseUrl=${apiConfig.baseUrl} message=${message}`;
+          ? 'mode=' + authMode + ' status=' + error.status + ' path=' + (error.details?.path ?? 'unknown') + ' baseUrl=' + (error.details?.baseUrl ?? apiConfig.baseUrl) + ' message=' + message
+          : 'mode=' + authMode + ' baseUrl=' + apiConfig.baseUrl + ' message=' + message;
       setAuthDebugText(debugMessage);
       Alert.alert(authMode === 'signup' ? 'Signup failed' : 'Login failed', message);
     } finally {
@@ -142,12 +148,12 @@ export default function App() {
     const credentialText = [
       'GMBL login credentials',
       '',
-      `login_id: ${generated.loginId}`,
-      `password: ${generated.password}`,
+      'login_id: ' + generated.loginId,
+      'password: ' + generated.password,
       '',
-      `api_url: ${apiConfig.baseUrl}`,
+      'api_url: ' + apiConfig.baseUrl,
     ].join('\n');
-    const downloaded = downloadTextFile(`${generated.loginId}.txt`, credentialText);
+    const downloaded = downloadTextFile(generated.loginId + '.txt', credentialText);
 
     setAuthMode('signup');
     setLoginId(generated.loginId);
@@ -186,51 +192,94 @@ export default function App() {
     }
   };
 
-  const betContent = (
-    <>
-      {session ? (
-        <ImageBackground source={require('./assets/green.jpg')} style={styles.posterHero} imageStyle={styles.posterHeroImage}>
-          <View style={styles.posterHeroShade}>
-            <Text style={styles.posterEyebrow}>Match Poster</Text>
-            <Text style={styles.posterTitle}>MI vs KKR</Text>
-            <View style={styles.posterMetaRow}>
-              <View style={styles.posterPill}>
-                <Text style={styles.posterPillLabel}>Markets</Text>
-                <Text style={styles.posterPillValue}>{marketCount}</Text>
-              </View>
-              <View style={styles.posterPill}>
-                <Text style={styles.posterPillLabel}>Bets</Text>
-                <Text style={styles.posterPillValue}>{betList.length}</Text>
-              </View>
-              <View style={styles.posterPill}>
-                <Text style={styles.posterPillLabel}>Types</Text>
-                <Text style={styles.posterPillValue}>Back / Lay</Text>
-              </View>
-            </View>
+  const placeBet = async (bet: BetListItem) => {
+    if (!session) {
+      Alert.alert('Login required', 'Create an account or log in before placing a bet.');
+      return;
+    }
+
+    const amount = Number(betAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      Alert.alert('Invalid bet', 'Enter a positive number before placing a bet.');
+      return;
+    }
+
+    try {
+      setSubmittingBetId(bet.id);
+      const response = await apiRequest<BetResponse>('/bets', {
+        method: 'POST',
+        token: session.token,
+        body: {
+          marketSlug: bet.marketSlug,
+          side: bet.apiSide,
+          amount,
+        },
+      });
+
+      const nextSession = {
+        token: session.token,
+        user: {
+          ...session.user,
+          balance: response.balance,
+        },
+      };
+
+      setSession(nextSession);
+      await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
+      setErrorText(null);
+      Alert.alert('Bet placed', bet.label + ' for ' + amount.toFixed(2));
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Bet placement failed.';
+
+      if (error instanceof ApiError && error.status === 401) {
+        await persistSession(null);
+      }
+
+      Alert.alert('Bet failed', message);
+    } finally {
+      setSubmittingBetId(null);
+    }
+  };
+
+  if (session) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar style="light" />
+        <View style={styles.feedScreen}>
+          <View style={styles.feedHeader}>
+            <AccountCard
+              authBusy={authBusy}
+              authMode={authMode}
+              loginId={loginId}
+              onChangeLoginId={setLoginId}
+              onChangePassword={setPassword}
+              onGenerateCredentials={generateSignupCredentials}
+              onLoginMode={() => setAuthMode('login')}
+              onLogout={logout}
+              onSignupMode={() => setAuthMode('signup')}
+              onSubmit={submitAuth}
+              onUploadLoginFile={uploadLoginFile}
+              password={password}
+              session={session}
+              sessionLoading={sessionLoading}
+            />
+            <SwipeIndicator currentIndex={currentIndex} total={betList.length} />
           </View>
-        </ImageBackground>
-      ) : null}
-      <AccountCard
-        authBusy={authBusy}
-        authMode={authMode}
-        loginId={loginId}
-        onChangeLoginId={setLoginId}
-        onChangePassword={setPassword}
-        onGenerateCredentials={generateSignupCredentials}
-        onLoginMode={() => setAuthMode('login')}
-        onLogout={logout}
-        onSignupMode={() => setAuthMode('signup')}
-        onSubmit={submitAuth}
-        onUploadLoginFile={uploadLoginFile}
-        password={password}
-        session={session}
-        sessionLoading={sessionLoading}
-      />
-      {session ? <BetListCard bets={betList} /> : null}
-      {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
-      {errorText ? <WarningCard errorText={errorText} /> : null}
-    </>
-  );
+          <BetSwiper
+            bets={betList}
+            betAmount={betAmount}
+            cardHeight={cardHeight}
+            onChangeBetAmount={setBetAmount}
+            onIndexChange={setCurrentIndex}
+            onPlaceBet={placeBet}
+            submittingBetId={submittingBetId}
+          />
+          {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
+          {errorText ? <WarningCard errorText={errorText} /> : null}
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -242,7 +291,24 @@ export default function App() {
         alwaysBounceVertical={false}
       >
         <ScreenHeader authMode={authMode} session={session} />
-        {betContent}
+        <AccountCard
+          authBusy={authBusy}
+          authMode={authMode}
+          loginId={loginId}
+          onChangeLoginId={setLoginId}
+          onChangePassword={setPassword}
+          onGenerateCredentials={generateSignupCredentials}
+          onLoginMode={() => setAuthMode('login')}
+          onLogout={logout}
+          onSignupMode={() => setAuthMode('signup')}
+          onSubmit={submitAuth}
+          onUploadLoginFile={uploadLoginFile}
+          password={password}
+          session={session}
+          sessionLoading={sessionLoading}
+        />
+        {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
+        {errorText ? <WarningCard errorText={errorText} /> : null}
       </ScrollView>
     </SafeAreaView>
   );

@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { issueToken, requireAuth } from './auth.js';
 import { config } from './config.js';
 import { pool, withTransaction } from './db.js';
-import { ensureDefaultMarket, sanitizeMarket } from './market.js';
+import { ensureConfiguredMarkets, ensureMarketBySlug, findMarketDefinition, sanitizeMarket } from './market.js';
 import { hashPassword, verifyPassword } from './password.js';
 
 const app = express();
@@ -72,8 +72,8 @@ app.get('/health', async (_req, res) => {
 });
 
 app.get('/market', async (_req, res) => {
-  const market = await withTransaction((client) => ensureDefaultMarket(client));
-  res.json({ market: sanitizeMarket(market) });
+  const markets = await withTransaction((client) => ensureConfiguredMarkets(client));
+  res.json({ market: sanitizeMarket(markets[0]) });
 });
 
 app.get('/market/stream', async (_req, res) => {
@@ -84,8 +84,8 @@ app.get('/market/stream', async (_req, res) => {
 
   marketSubscribers.add(res);
 
-  const market = await withTransaction((client) => ensureDefaultMarket(client));
-  res.write(`event: market\ndata: ${JSON.stringify(sanitizeMarket(market))}\n\n`);
+  const markets = await withTransaction((client) => ensureConfiguredMarkets(client));
+  res.write(`event: market\ndata: ${JSON.stringify(sanitizeMarket(markets[0]))}\n\n`);
 
   const heartbeat = setInterval(() => {
     res.write('event: ping\ndata: {}\n\n');
@@ -113,7 +113,7 @@ app.post('/auth/signup', async (req, res) => {
   try {
     const passwordHash = await hashPassword(password);
     const result = await withTransaction(async (client) => {
-      await ensureDefaultMarket(client);
+      await ensureConfiguredMarkets(client);
 
       const existing = await client.query('select id from app_users where login_id = $1', [loginId]);
       if (existing.rows[0]) {
@@ -362,17 +362,23 @@ app.post('/admin/users/:userId/balance', requireAdmin, async (req, res) => {
 });
 
 app.post('/bets', requireAuth, async (req, res) => {
+  const marketSlug = String(req.body.marketSlug ?? '').trim();
   const side = req.body.side;
   const amount = Number(req.body.amount);
+  const marketDefinition = findMarketDefinition(marketSlug);
 
-  if (!(side === 'yes' || side === 'no') || !Number.isFinite(amount) || amount <= 0) {
+  if (!marketDefinition || !(side === 'yes' || side === 'no') || !Number.isFinite(amount) || amount <= 0) {
     res.status(400).json({ error: 'Invalid bet payload.' });
     return;
   }
 
   try {
     const result = await withTransaction(async (client) => {
-      const market = await ensureDefaultMarket(client);
+      const market = await ensureMarketBySlug(client, marketSlug);
+      if (!market) {
+        throw new Error('MARKET_NOT_FOUND');
+      }
+
       const userResult = await client.query(
         'select id, login_id, username, balance from app_users where id = $1 for update',
         [req.auth.sub],
@@ -406,7 +412,7 @@ app.post('/bets', requireAuth, async (req, res) => {
       await client.query(
         `insert into wallet_transactions (user_id, kind, amount_delta, balance_after, reference_id, note)
          values ($1, 'bet', $2, $3, $4, $5)`,
-        [user.id, -amount, nextBalance, betResult.rows[0].id, `${side.toUpperCase()} bet`],
+        [user.id, -amount, nextBalance, betResult.rows[0].id, marketDefinition.question + ' ' + side.toUpperCase() + ' bet'],
       );
 
       const marketUpdate = await client.query(
@@ -446,6 +452,11 @@ app.post('/bets', requireAuth, async (req, res) => {
       return;
     }
 
+    if (error instanceof Error && error.message === 'MARKET_NOT_FOUND') {
+      res.status(404).json({ error: 'Market not found.' });
+      return;
+    }
+
     if (error instanceof Error && error.message === 'INSUFFICIENT_BALANCE') {
       res.status(409).json({ error: 'Insufficient balance.' });
       return;
@@ -482,7 +493,7 @@ app.use((error, _req, res, _next) => {
 });
 
 const start = async () => {
-  await withTransaction((client) => ensureDefaultMarket(client));
+  await withTransaction((client) => ensureConfiguredMarkets(client));
 
   app.listen(config.port, () => {
     console.log(`GMBL server listening on ${config.port}`);
