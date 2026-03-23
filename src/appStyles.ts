@@ -440,4 +440,66 @@ export const styles = StyleSheet.create({
     textAlign: 'center',
     textTransform: 'uppercase',
   },
+  betSlipsCard: {
+    backgroundColor: '#0f172a',
+    borderColor: 'rgba(148, 163, 184, 0.14)',
+    borderRadius: 22,
+    borderWidth: 1,
+    gap: 12,
+    padding: 14,
+  },
+  betSlipsHeader: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  betSlipsTitle: {
+    color: '#f8fafc',
+    fontSize: 17,
+    fontWeight: '800',
+  },
+  betSlipsCount: {
+    color: '#d1fae5',
+    fontSize: 13,
+    fontWeight: '800',
+  },
+  betSlipsEmpty: {
+    color: '#94a3b8',
+    fontSize: 14,
+    lineHeight: 20,
+  },
+  betSlipsList: {
+    maxHeight: 180,
+  },
+  betSlipItem: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderRadius: 16,
+    gap: 4,
+    marginBottom: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
+  betSlipTopRow: {
+    alignItems: 'flex-start',
+    flexDirection: 'row',
+    gap: 12,
+    justifyContent: 'space-between',
+  },
+  betSlipTitle: {
+    color: '#f8fafc',
+    flex: 1,
+    fontSize: 14,
+    fontWeight: '800',
+    lineHeight: 20,
+  },
+  betSlipAmount: {
+    color: '#f97316',
+    fontSize: 14,
+    fontWeight: '900',
+  },
+  betSlipMeta: {
+    color: '#cbd5e1',
+    fontSize: 12,
+    lineHeight: 18,
+  },
 });

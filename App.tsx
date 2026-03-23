@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, SafeAreaView, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import { AccountCard, BetSwiper, ScreenHeader, SwipeIndicator, WarningCard } from './src/appComponents';
+import { AccountCard, BetSlipsPanel, BetSwiper, ScreenHeader, SwipeIndicator, WarningCard } from './src/appComponents';
 import { styles } from './src/appStyles';
 import {
   buildBetCards,
@@ -13,9 +13,11 @@ import {
   type BetCard,
   type BetChoiceKey,
   type BetResponse,
+  type BetSlip,
   type MarketsResponse,
   type MeResponse,
   type Market,
+  type MyBetsResponse,
   type SessionState,
 } from './src/appTypes';
 import { createGeneratedCredentials, downloadTextFile, parseCredentialText, readCredentialFile } from './src/credentials';
@@ -52,6 +54,7 @@ export default function App() {
   const [sessionLoading, setSessionLoading] = useState(true);
   const [marketsLoading, setMarketsLoading] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
+  const [betSlipsLoading, setBetSlipsLoading] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
@@ -60,6 +63,7 @@ export default function App() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [session, setSession] = useState<SessionState | null>(null);
   const [markets, setMarkets] = useState<Market[]>([]);
+  const [betSlips, setBetSlips] = useState<BetSlip[]>([]);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [authDebugText, setAuthDebugText] = useState<string | null>(null);
 
@@ -143,6 +147,51 @@ export default function App() {
       setCurrentIndex(Math.max(0, betCards.length - 1));
     }
   }, [betCards.length, currentIndex]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadBetSlips = async () => {
+      if (!session) {
+        if (isMounted) {
+          setBetSlips([]);
+          setBetSlipsLoading(false);
+        }
+        return;
+      }
+
+      try {
+        if (isMounted) {
+          setBetSlipsLoading(true);
+        }
+
+        const response = await apiRequest<MyBetsResponse>('/bets/me', { token: session.token });
+
+        if (isMounted) {
+          setBetSlips(response.bets);
+        }
+      } catch (error) {
+        if (error instanceof ApiError && error.status === 401) {
+          await persistSession(null);
+          return;
+        }
+
+        if (isMounted) {
+          setErrorText(error instanceof Error ? error.message : 'Failed to load your bet slips.');
+        }
+      } finally {
+        if (isMounted) {
+          setBetSlipsLoading(false);
+        }
+      }
+    };
+
+    loadBetSlips();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [session]);
 
   const clearAuthForm = () => {
     setPassword('');
@@ -268,6 +317,7 @@ export default function App() {
       setMarkets((currentMarkets) =>
         currentMarkets.map((market) => (market.slug === response.market.slug ? response.market : market)),
       );
+      setBetSlips((currentSlips) => [response.bet, ...currentSlips].slice(0, 50));
       await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
       setErrorText(null);
       Alert.alert('Bet placed', bet[choiceKey].label + ' for ' + amount.toFixed(2));
@@ -328,6 +378,7 @@ export default function App() {
               <Text style={styles.warningText}>No betting markets are available from the server.</Text>
             </View>
           )}
+          <BetSlipsPanel slips={betSlips} markets={markets} loading={betSlipsLoading} />
           {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
           {errorText ? <WarningCard errorText={errorText} /> : null}
         </View>

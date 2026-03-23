@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { styles } from './appStyles';
-import { chipAmounts, type AuthMode, type BetCard, type BetChoiceKey, type SessionState } from './appTypes';
+import { chipAmounts, type AuthMode, type BetCard, type BetChoiceKey, type BetSlip, type Market, type SessionState } from './appTypes';
 
 type HeaderProps = {
   authMode: AuthMode;
@@ -257,6 +257,55 @@ export function BetSwiper({
         );
       })}
     </ScrollView>
+  );
+}
+
+type BetSlipsPanelProps = {
+  slips: BetSlip[];
+  markets: Market[];
+  loading: boolean;
+};
+
+export function BetSlipsPanel({ slips, markets, loading }: BetSlipsPanelProps) {
+  const findMarket = (marketSlug: string) => markets.find((market) => market.slug === marketSlug);
+
+  return (
+    <View style={styles.betSlipsCard}>
+      <View style={styles.betSlipsHeader}>
+        <Text style={styles.betSlipsTitle}>Bet Slips</Text>
+        <Text style={styles.betSlipsCount}>{slips.length}</Text>
+      </View>
+      {loading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator size="small" color="#f97316" />
+        </View>
+      ) : !slips.length ? (
+        <Text style={styles.betSlipsEmpty}>Your placed bets will show here.</Text>
+      ) : (
+        <ScrollView style={styles.betSlipsList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+          {slips.map((slip) => {
+            const market = findMarket(slip.marketSlug);
+            const title = market ? (slip.side === 'yes' ? market.backLabel : market.layLabel) : slip.marketSlug;
+            const returns = slip.amount * slip.odds;
+
+            return (
+              <View key={slip.id} style={styles.betSlipItem}>
+                <View style={styles.betSlipTopRow}>
+                  <Text style={styles.betSlipTitle}>{title}</Text>
+                  <Text style={styles.betSlipAmount}>{slip.amount.toFixed(2)}</Text>
+                </View>
+                <Text style={styles.betSlipMeta}>
+                  Odds {slip.odds.toFixed(2)}x • Return {returns.toFixed(2)}
+                </Text>
+                <Text style={styles.betSlipMeta}>
+                  {new Date(slip.createdAt).toLocaleString()}
+                </Text>
+              </View>
+            );
+          })}
+        </ScrollView>
+      )}
+    </View>
   );
 }
 

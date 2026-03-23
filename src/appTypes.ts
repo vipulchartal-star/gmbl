@@ -67,16 +67,23 @@ export type MarketsResponse = {
   markets: Market[];
 };
 
+export type BetSlip = {
+  id: string;
+  marketSlug: string;
+  side: ApiBetSide;
+  amount: number;
+  odds: number;
+  createdAt: string;
+};
+
+export type MyBetsResponse = {
+  bets: BetSlip[];
+};
+
 export type BetResponse = {
   balance: number;
   market: Market;
-  bet: {
-    id: string;
-    marketSlug: string;
-    side: ApiBetSide;
-    amount: number;
-    createdAt: string;
-  };
+  bet: BetSlip;
 };
 
 export const chipAmounts = [10, 25, 50, 100];

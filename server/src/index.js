@@ -460,6 +460,7 @@ app.post('/bets', requireAuth, async (req, res) => {
         marketSlug: result.bet.market_slug,
         side: result.bet.side,
         amount: Number(result.bet.amount),
+        odds: Number(result.bet.odds),
         createdAt: result.bet.created_at,
       },
       balance: result.balance,
@@ -595,7 +596,7 @@ app.post('/admin/markets/:marketSlug/settle', requireAdmin, async (req, res) => 
 
 app.get('/bets/me', requireAuth, async (req, res) => {
   const result = await pool.query(
-    `select id, market_slug, side, amount, created_at
+    `select id, market_slug, side, amount, odds, created_at
      from bets
      where user_id = $1
      order by created_at desc
@@ -609,6 +610,7 @@ app.get('/bets/me', requireAuth, async (req, res) => {
       marketSlug: row.market_slug,
       side: row.side,
       amount: Number(row.amount),
+      odds: Number(row.odds),
       createdAt: row.created_at,
     })),
   });
