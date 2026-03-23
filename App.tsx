@@ -1,20 +1,15 @@
 import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Alert, ImageBackground, Platform, SafeAreaView, ScrollView, Text, View } from 'react-native';
 
-import { AccountCard, BetCard, MarketCard, ScreenHeader, WarningCard } from './src/appComponents';
+import { AccountCard, BetListCard, ScreenHeader, WarningCard } from './src/appComponents';
 import { styles } from './src/appStyles';
 import {
-  emptyMarket,
-  pollMs,
+  betList,
   sessionKey,
   type AuthMode,
   type AuthResponse,
-  type BetResponse,
-  type BetSide,
-  type Market,
-  type MarketResponse,
   type MeResponse,
   type SessionState,
 } from './src/appTypes';
@@ -48,11 +43,7 @@ const sessionStorage = {
 };
 
 export default function App() {
-  const [market, setMarket] = useState<Market>(emptyMarket);
-  const [betAmount, setBetAmount] = useState('10');
-  const [marketLoading, setMarketLoading] = useState(true);
   const [sessionLoading, setSessionLoading] = useState(true);
-  const [submitting, setSubmitting] = useState<BetSide | null>(null);
   const [authBusy, setAuthBusy] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [loginId, setLoginId] = useState('');
@@ -61,14 +52,7 @@ export default function App() {
   const [errorText, setErrorText] = useState<string | null>(null);
   const [authDebugText, setAuthDebugText] = useState<string | null>(null);
 
-  const totalPool = market.totalPool || market.yesPool + market.noPool;
-  const yesShare = totalPool > 0 ? market.yesPool / totalPool : 0.5;
-  const noShare = totalPool > 0 ? market.noPool / totalPool : 0.5;
-
-  const liveRatio = useMemo(
-    () => `${(yesShare * 100).toFixed(0)} : ${(noShare * 100).toFixed(0)}`,
-    [noShare, yesShare],
-  );
+  const marketCount = useMemo(() => new Set(betList.map((bet) => bet.market)).size, []);
 
   const persistSession = async (nextSession: SessionState | null) => {
     setSession(nextSession);
@@ -79,19 +63,6 @@ export default function App() {
     }
 
     await sessionStorage.removeItem(sessionKey);
-  };
-
-  const loadMarket = async () => {
-    try {
-      const response = await apiRequest<MarketResponse>('/market');
-      setMarket(response.market);
-      setErrorText(null);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load market.';
-      setErrorText(message);
-    } finally {
-      setMarketLoading(false);
-    }
   };
 
   useEffect(() => {
@@ -110,6 +81,7 @@ export default function App() {
 
         if (isMounted) {
           setSession({ token: parsed.token, user: response.user });
+          setErrorText(null);
         }
       } catch {
         await sessionStorage.removeItem(sessionKey);
@@ -127,12 +99,6 @@ export default function App() {
     };
   }, []);
 
-  useEffect(() => {
-    loadMarket();
-    const intervalId = setInterval(loadMarket, pollMs);
-    return () => clearInterval(intervalId);
-  }, []);
-
   const clearAuthForm = () => {
     setPassword('');
   };
@@ -146,16 +112,11 @@ export default function App() {
       setAuthBusy(true);
       setAuthDebugText(null);
       const path = authMode === 'signup' ? '/auth/signup' : '/auth/login';
-      console.log('[auth] submit', { mode: authMode, path, loginId, baseUrl: apiConfig.baseUrl });
       const response = await apiRequest<AuthResponse>(path, {
         method: 'POST',
-        body:
-          authMode === 'signup'
-            ? { loginId, password }
-            : { loginId, password },
+        body: { loginId, password },
       });
 
-      console.log('[auth] success', { mode: authMode, loginId: response.user.loginId, userId: response.user.id });
       await persistSession({ token: response.token, user: response.user });
       clearAuthForm();
       setErrorText(null);
@@ -165,7 +126,6 @@ export default function App() {
         error instanceof ApiError
           ? `mode=${authMode} status=${error.status} path=${error.details?.path ?? 'unknown'} baseUrl=${error.details?.baseUrl ?? apiConfig.baseUrl} message=${message}`
           : `mode=${authMode} baseUrl=${apiConfig.baseUrl} message=${message}`;
-      console.log('[auth] failure', debugMessage);
       setAuthDebugText(debugMessage);
       Alert.alert(authMode === 'signup' ? 'Signup failed' : 'Login failed', message);
     } finally {
@@ -226,70 +186,25 @@ export default function App() {
     }
   };
 
-  const placeBet = async (side: BetSide) => {
-    if (!session) {
-      Alert.alert('Login required', 'Create an account or log in before placing a bet.');
-      return;
-    }
-
-    const amount = Number(betAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      Alert.alert('Invalid bet', 'Enter a positive number before placing a bet.');
-      return;
-    }
-
-    try {
-      setSubmitting(side);
-      const response = await apiRequest<BetResponse>('/bets', {
-        method: 'POST',
-        token: session.token,
-        body: { side, amount },
-      });
-
-      const nextSession = {
-        token: session.token,
-        user: {
-          ...session.user,
-          balance: response.balance,
-        },
-      };
-
-      setSession(nextSession);
-      setMarket(response.market);
-      await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
-      setErrorText(null);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Bet placement failed.';
-
-      if (error instanceof ApiError && error.status === 401) {
-        await persistSession(null);
-      }
-
-      Alert.alert('Bet failed', message);
-    } finally {
-      setSubmitting(null);
-    }
-  };
-
   const betContent = (
     <>
       {session ? (
         <ImageBackground source={require('./assets/green.jpg')} style={styles.posterHero} imageStyle={styles.posterHeroImage}>
           <View style={styles.posterHeroShade}>
             <Text style={styles.posterEyebrow}>Match Poster</Text>
-            <Text style={styles.posterTitle}>{market.question}</Text>
+            <Text style={styles.posterTitle}>MI vs KKR</Text>
             <View style={styles.posterMetaRow}>
               <View style={styles.posterPill}>
-                <Text style={styles.posterPillLabel}>Ratio</Text>
-                <Text style={styles.posterPillValue}>{liveRatio}</Text>
+                <Text style={styles.posterPillLabel}>Markets</Text>
+                <Text style={styles.posterPillValue}>{marketCount}</Text>
               </View>
               <View style={styles.posterPill}>
-                <Text style={styles.posterPillLabel}>Pool</Text>
-                <Text style={styles.posterPillValue}>{totalPool.toFixed(2)}</Text>
+                <Text style={styles.posterPillLabel}>Bets</Text>
+                <Text style={styles.posterPillValue}>{betList.length}</Text>
               </View>
               <View style={styles.posterPill}>
-                <Text style={styles.posterPillLabel}>Status</Text>
-                <Text style={styles.posterPillValue}>{market.status}</Text>
+                <Text style={styles.posterPillLabel}>Types</Text>
+                <Text style={styles.posterPillValue}>Back / Lay</Text>
               </View>
             </View>
           </View>
@@ -299,7 +214,6 @@ export default function App() {
         authBusy={authBusy}
         authMode={authMode}
         loginId={loginId}
-        marketStatus={market.status}
         onChangeLoginId={setLoginId}
         onChangePassword={setPassword}
         onGenerateCredentials={generateSignupCredentials}
@@ -312,25 +226,7 @@ export default function App() {
         session={session}
         sessionLoading={sessionLoading}
       />
-      {session ? (
-        <>
-          <MarketCard
-            liveRatio={liveRatio}
-            market={market}
-            marketLoading={marketLoading}
-            noShare={noShare}
-            totalPool={totalPool}
-            yesShare={yesShare}
-          />
-          <BetCard
-            betAmount={betAmount}
-            onChangeBetAmount={setBetAmount}
-            onPlaceNo={() => placeBet('no')}
-            onPlaceYes={() => placeBet('yes')}
-            submitting={submitting}
-          />
-        </>
-      ) : null}
+      {session ? <BetListCard bets={betList} /> : null}
       {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
       {errorText ? <WarningCard errorText={errorText} /> : null}
     </>
@@ -345,7 +241,7 @@ export default function App() {
         endFillColor="#08111f"
         alwaysBounceVertical={false}
       >
-        {session ? null : <ScreenHeader authMode={authMode} session={session} />}
+        <ScreenHeader authMode={authMode} session={session} />
         {betContent}
       </ScrollView>
     </SafeAreaView>

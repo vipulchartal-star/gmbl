@@ -1,15 +1,12 @@
-export type BetSide = 'yes' | 'no';
 export type AuthMode = 'login' | 'signup';
+export type BetDirection = 'back' | 'lay';
 
-export type Market = {
-  slug: string;
-  question: string;
-  status: string;
-  yesPool: number;
-  noPool: number;
-  totalPool: number;
-  totalBets: number;
-  updatedAt: string;
+export type BetListItem = {
+  id: string;
+  match: string;
+  market: string;
+  side: BetDirection;
+  label: string;
 };
 
 export type SessionUser = {
@@ -29,30 +26,53 @@ export type AuthResponse = {
   user: SessionUser;
 };
 
-export type MarketResponse = {
-  market: Market;
-};
-
 export type MeResponse = {
   user: SessionUser;
 };
 
-export type BetResponse = {
-  balance: number;
-  market: Market;
-};
-
-export const chipAmounts = [10, 25, 50, 100];
 export const sessionKey = 'gmbl-api-session';
-export const pollMs = 4000;
 
-export const emptyMarket: Market = {
-  slug: 'live-yes-no',
-  question: 'Will the outcome be YES?',
-  status: 'open',
-  yesPool: 0,
-  noPool: 0,
-  totalPool: 0,
-  totalBets: 0,
-  updatedAt: '',
-};
+export const betList: BetListItem[] = [
+  {
+    id: 'mi-vs-kkr-toss-back',
+    match: 'MI vs KKR',
+    market: 'Toss',
+    side: 'back',
+    label: 'MI vs KKR Toss Back',
+  },
+  {
+    id: 'mi-vs-kkr-toss-lay',
+    match: 'MI vs KKR',
+    market: 'Toss',
+    side: 'lay',
+    label: 'MI vs KKR Toss Lay',
+  },
+  {
+    id: 'mi-vs-kkr-bookmaker-back',
+    match: 'MI vs KKR',
+    market: 'Bookmaker',
+    side: 'back',
+    label: 'MI vs KKR Bookmaker Back',
+  },
+  {
+    id: 'mi-vs-kkr-bookmaker-lay',
+    match: 'MI vs KKR',
+    market: 'Bookmaker',
+    side: 'lay',
+    label: 'MI vs KKR Bookmaker Lay',
+  },
+  {
+    id: 'mi-vs-kkr-match-odds-back',
+    match: 'MI vs KKR',
+    market: 'Match Odds',
+    side: 'back',
+    label: 'MI vs KKR Match Odds Back',
+  },
+  {
+    id: 'mi-vs-kkr-match-odds-lay',
+    match: 'MI vs KKR',
+    market: 'Match Odds',
+    side: 'lay',
+    label: 'MI vs KKR Match Odds Lay',
+  },
+];
