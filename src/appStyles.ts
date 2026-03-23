@@ -206,9 +206,10 @@ export const styles = StyleSheet.create({
   },
   betHeroTitle: {
     color: '#ffffff',
-    fontSize: 54,
+    fontSize: 40,
     fontWeight: '900',
-    letterSpacing: 1,
+    letterSpacing: 0.4,
+    lineHeight: 44,
   },
   betHeroLabel: {
     color: '#ffffff',
@@ -239,6 +240,38 @@ export const styles = StyleSheet.create({
     color: '#f8fafc',
     fontSize: 18,
     fontWeight: '800',
+  },
+  choiceRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  choiceButton: {
+    borderRadius: 18,
+    flex: 1,
+    paddingHorizontal: 14,
+    paddingVertical: 14,
+  },
+  choiceButtonBack: {
+    backgroundColor: 'rgba(34, 197, 94, 0.18)',
+  },
+  choiceButtonLay: {
+    backgroundColor: 'rgba(239, 68, 68, 0.18)',
+  },
+  choiceButtonActive: {
+    borderColor: 'rgba(255, 255, 255, 0.7)',
+    borderWidth: 1,
+  },
+  choiceButtonLabel: {
+    color: '#f8fafc',
+    fontSize: 13,
+    fontWeight: '800',
+    marginBottom: 4,
+    textTransform: 'uppercase',
+  },
+  choiceButtonValue: {
+    color: '#ffffff',
+    fontSize: 22,
+    fontWeight: '900',
   },
   betMeaningBox: {
     backgroundColor: 'rgba(255, 255, 255, 0.06)',

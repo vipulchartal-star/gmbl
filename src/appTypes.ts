@@ -1,19 +1,25 @@
 export type AuthMode = 'login' | 'signup';
 export type BetDirection = 'back' | 'lay';
 export type ApiBetSide = 'yes' | 'no';
+export type BetChoiceKey = 'back' | 'lay';
 
-export type BetListItem = {
+export type BetChoice = {
+  direction: BetDirection;
+  apiSide: ApiBetSide;
+  odds: number;
+  label: string;
+  meaning: string;
+  winText: string;
+};
+
+export type BetCard = {
   id: string;
   match: string;
   market: string;
   marketSlug: string;
-  side: BetDirection;
-  apiSide: ApiBetSide;
-  odds: number;
-  label: string;
   outcomeLabel: string;
-  meaning: string;
-  winText: string;
+  back: BetChoice;
+  lay: BetChoice;
 };
 
 export type SessionUser = {
@@ -63,83 +69,74 @@ export type BetResponse = {
 export const chipAmounts = [10, 25, 50, 100];
 export const sessionKey = 'gmbl-api-session';
 
-export const betList: BetListItem[] = [
+export const betCards: BetCard[] = [
   {
-    id: 'mi-vs-kkr-toss-back',
+    id: 'mi-vs-kkr-toss',
     match: 'MI vs KKR',
     market: 'Toss',
     marketSlug: 'mi-vs-kkr-toss',
-    side: 'back',
-    apiSide: 'yes',
-    odds: 1.9,
-    label: 'Back MI to win the toss',
     outcomeLabel: 'MI wins the toss',
-    meaning: 'Back means you are betting for MI to win the toss.',
-    winText: 'You win if MI wins the toss. You lose if MI does not win the toss.',
+    back: {
+      direction: 'back',
+      apiSide: 'yes',
+      odds: 1.9,
+      label: 'Back MI to win the toss',
+      meaning: 'Back means you are betting for MI to win the toss.',
+      winText: 'You win if MI wins the toss. You lose if MI does not win the toss.',
+    },
+    lay: {
+      direction: 'lay',
+      apiSide: 'no',
+      odds: 1.92,
+      label: 'Lay MI to win the toss',
+      meaning: 'Lay means you are betting against MI winning the toss.',
+      winText: 'You win if MI does not win the toss. You lose if MI wins the toss.',
+    },
   },
   {
-    id: 'mi-vs-kkr-toss-lay',
-    match: 'MI vs KKR',
-    market: 'Toss',
-    marketSlug: 'mi-vs-kkr-toss',
-    side: 'lay',
-    apiSide: 'no',
-    odds: 1.92,
-    label: 'Lay MI to win the toss',
-    outcomeLabel: 'MI wins the toss',
-    meaning: 'Lay means you are betting against MI winning the toss.',
-    winText: 'You win if MI does not win the toss. You lose if MI wins the toss.',
-  },
-  {
-    id: 'mi-vs-kkr-bookmaker-back',
+    id: 'mi-vs-kkr-bookmaker',
     match: 'MI vs KKR',
     market: 'Bookmaker',
     marketSlug: 'mi-vs-kkr-bookmaker',
-    side: 'back',
-    apiSide: 'yes',
-    odds: 2.18,
-    label: 'Back MI to win',
     outcomeLabel: 'MI wins the match',
-    meaning: 'Back means you are betting for MI to win the match.',
-    winText: 'You win if MI wins the match. You lose if MI does not win the match.',
+    back: {
+      direction: 'back',
+      apiSide: 'yes',
+      odds: 2.18,
+      label: 'Back MI to win',
+      meaning: 'Back means you are betting for MI to win the match.',
+      winText: 'You win if MI wins the match. You lose if MI does not win the match.',
+    },
+    lay: {
+      direction: 'lay',
+      apiSide: 'no',
+      odds: 1.78,
+      label: 'Lay MI to win',
+      meaning: 'Lay means you are betting against MI winning the match.',
+      winText: 'You win if MI does not win the match. You lose if MI wins the match.',
+    },
   },
   {
-    id: 'mi-vs-kkr-bookmaker-lay',
-    match: 'MI vs KKR',
-    market: 'Bookmaker',
-    marketSlug: 'mi-vs-kkr-bookmaker',
-    side: 'lay',
-    apiSide: 'no',
-    odds: 1.78,
-    label: 'Lay MI to win',
-    outcomeLabel: 'MI wins the match',
-    meaning: 'Lay means you are betting against MI winning the match.',
-    winText: 'You win if MI does not win the match. You lose if MI wins the match.',
-  },
-  {
-    id: 'mi-vs-kkr-match-odds-back',
+    id: 'mi-vs-kkr-match-odds',
     match: 'MI vs KKR',
     market: 'Match Odds',
     marketSlug: 'mi-vs-kkr-match-odds',
-    side: 'back',
-    apiSide: 'yes',
-    odds: 2.06,
-    label: 'Back MI to win',
     outcomeLabel: 'MI wins the match',
-    meaning: 'Back means you are betting for MI to win the match.',
-    winText: 'You win if MI wins the match. You lose if MI does not win the match.',
-  },
-  {
-    id: 'mi-vs-kkr-match-odds-lay',
-    match: 'MI vs KKR',
-    market: 'Match Odds',
-    marketSlug: 'mi-vs-kkr-match-odds',
-    side: 'lay',
-    apiSide: 'no',
-    odds: 1.84,
-    label: 'Lay MI to win',
-    outcomeLabel: 'MI wins the match',
-    meaning: 'Lay means you are betting against MI winning the match.',
-    winText: 'You win if MI does not win the match. You lose if MI wins the match.',
+    back: {
+      direction: 'back',
+      apiSide: 'yes',
+      odds: 2.06,
+      label: 'Back MI to win',
+      meaning: 'Back means you are betting for MI to win the match.',
+      winText: 'You win if MI wins the match. You lose if MI does not win the match.',
+    },
+    lay: {
+      direction: 'lay',
+      apiSide: 'no',
+      odds: 1.84,
+      label: 'Lay MI to win',
+      meaning: 'Lay means you are betting against MI winning the match.',
+      winText: 'You win if MI does not win the match. You lose if MI wins the match.',
+    },
   },
 ];

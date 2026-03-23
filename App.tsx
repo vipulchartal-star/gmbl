@@ -6,11 +6,12 @@ import { Alert, Platform, SafeAreaView, ScrollView, useWindowDimensions, View } 
 import { AccountCard, BetSwiper, ScreenHeader, SwipeIndicator, WarningCard } from './src/appComponents';
 import { styles } from './src/appStyles';
 import {
-  betList,
+  betCards,
   sessionKey,
   type AuthMode,
   type AuthResponse,
-  type BetListItem,
+  type BetCard,
+  type BetChoiceKey,
   type BetResponse,
   type MeResponse,
   type SessionState,
@@ -192,7 +193,7 @@ export default function App() {
     }
   };
 
-  const placeBet = async (bet: BetListItem) => {
+  const placeBet = async (bet: BetCard, choiceKey: BetChoiceKey) => {
     if (!session) {
       Alert.alert('Login required', 'Create an account or log in before placing a bet.');
       return;
@@ -205,13 +206,14 @@ export default function App() {
     }
 
     try {
-      setSubmittingBetId(bet.id);
+      const choice = bet[choiceKey];
+      setSubmittingBetId(bet.id + ':' + choiceKey);
       const response = await apiRequest<BetResponse>('/bets', {
         method: 'POST',
         token: session.token,
         body: {
           marketSlug: bet.marketSlug,
-          side: bet.apiSide,
+          side: choice.apiSide,
           amount,
         },
       });
@@ -227,7 +229,7 @@ export default function App() {
       setSession(nextSession);
       await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
       setErrorText(null);
-      Alert.alert('Bet placed', bet.label + ' for ' + amount.toFixed(2));
+      Alert.alert('Bet placed', bet[choiceKey].label + ' for ' + amount.toFixed(2));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bet placement failed.';
 
@@ -263,10 +265,10 @@ export default function App() {
               session={session}
               sessionLoading={sessionLoading}
             />
-            <SwipeIndicator currentIndex={currentIndex} total={betList.length} />
+            <SwipeIndicator currentIndex={currentIndex} total={betCards.length} />
           </View>
           <BetSwiper
-            bets={betList}
+            bets={betCards}
             betAmount={betAmount}
             cardHeight={cardHeight}
             onChangeBetAmount={setBetAmount}
