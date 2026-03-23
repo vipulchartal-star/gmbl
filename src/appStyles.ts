@@ -132,10 +132,21 @@ export const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '800',
   },
+  balanceBadge: {
+    borderRadius: 999,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  balanceBadgeAlert: {
+    backgroundColor: 'rgba(239, 68, 68, 0.18)',
+  },
   accountBalance: {
     color: '#cbd5e1',
     fontSize: 13,
     fontWeight: '700',
+  },
+  accountBalanceAlert: {
+    color: '#fca5a5',
   },
   topBarPill: {
     backgroundColor: 'rgba(30, 41, 59, 0.7)',
@@ -352,8 +363,10 @@ export const styles = StyleSheet.create({
   actionBetButton: {
     borderRadius: 18,
     gap: 8,
+    overflow: 'visible',
     paddingHorizontal: 16,
     paddingVertical: 16,
+    position: 'relative',
   },
   actionBetButtonBack: {
     backgroundColor: 'rgba(34, 197, 94, 0.2)',
@@ -398,6 +411,23 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: '900',
     textTransform: 'uppercase',
+  },
+  buttonBurst: {
+    bottom: 18,
+    left: '50%',
+    position: 'absolute',
+    pointerEvents: 'none',
+    top: 18,
+    width: 1,
+    zIndex: 2,
+  },
+  buttonBurstParticle: {
+    borderRadius: 999,
+    height: 10,
+    left: -5,
+    position: 'absolute',
+    top: '50%',
+    width: 10,
   },
   betAmountInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',

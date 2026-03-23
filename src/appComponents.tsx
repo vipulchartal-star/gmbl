@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Alert, Animated, Easing, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { styles } from './appStyles';
 import { chipAmounts, type AuthMode, type BetCard, type BetChoiceKey, type BetSlip, type Market, type SessionState } from './appTypes';
@@ -43,6 +43,7 @@ type AccountCardProps = {
   sessionLoading: boolean;
   betSlipCount?: number;
   betSlipsOpen?: boolean;
+  balanceAlertTick?: number;
 };
 
 export function AccountCard({
@@ -63,8 +64,26 @@ export function AccountCard({
   sessionLoading,
   betSlipCount = 0,
   betSlipsOpen = false,
+  balanceAlertTick = 0,
 }: AccountCardProps) {
   const isSignup = authMode === 'signup';
+  const balanceShakeX = useRef(new Animated.Value(0)).current;
+  const [balanceAlert, setBalanceAlert] = useState(false);
+
+  useEffect(() => {
+    if (balanceAlertTick <= 0) {
+      return;
+    }
+
+    setBalanceAlert(true);
+    Animated.sequence([
+      Animated.timing(balanceShakeX, { toValue: -8, duration: 55, useNativeDriver: true }),
+      Animated.timing(balanceShakeX, { toValue: 8, duration: 55, useNativeDriver: true }),
+      Animated.timing(balanceShakeX, { toValue: -6, duration: 50, useNativeDriver: true }),
+      Animated.timing(balanceShakeX, { toValue: 6, duration: 50, useNativeDriver: true }),
+      Animated.timing(balanceShakeX, { toValue: 0, duration: 45, useNativeDriver: true }),
+    ]).start(() => setBalanceAlert(false));
+  }, [balanceAlertTick, balanceShakeX]);
 
   return (
     <View style={session ? styles.sessionStrip : styles.card}>
@@ -77,9 +96,13 @@ export function AccountCard({
           <View style={styles.accountSlimMeta}>
             <Text style={styles.accountTag}>@{session.user.loginId}</Text>
             <Text style={styles.accountDot}>•</Text>
-            <Text style={styles.accountBalance}>
-              Bal <AnimatedNumber value={session.user.balance} decimals={2} />
-            </Text>
+            <Animated.View
+              style={[styles.balanceBadge, balanceAlert ? styles.balanceBadgeAlert : null, { transform: [{ translateX: balanceShakeX }] }]}
+            >
+              <Text style={[styles.accountBalance, balanceAlert ? styles.accountBalanceAlert : null]}>
+                Bal <AnimatedNumber value={session.user.balance} decimals={2} />
+              </Text>
+            </Animated.View>
           </View>
           <View style={styles.accountActions}>
             <Pressable style={[styles.topBarPill, betSlipsOpen ? styles.topBarPillActive : null]} onPress={onToggleBetSlips}>
@@ -144,6 +167,7 @@ type BetSwiperProps = {
   betAmount: string;
   cardHeight: number;
   currentIndex: number;
+  celebratingBetId: string | null;
   onChangeBetAmount: (value: string) => void;
   onIndexChange: (index: number) => void;
   onPlaceBet: (bet: BetCard, choiceKey: BetChoiceKey) => void;
@@ -164,6 +188,7 @@ export function BetSwiper({
   betAmount,
   cardHeight,
   currentIndex,
+  celebratingBetId,
   onChangeBetAmount,
   onIndexChange,
   onPlaceBet,
@@ -201,8 +226,10 @@ export function BetSwiper({
           bet.lay.meaning,
           bet.lay.winText,
         ].join(String.fromCharCode(10));
-        const backSubmitting = submittingBetId === bet.id + ':back';
-        const laySubmitting = submittingBetId === bet.id + ':lay';
+        const backBetId = bet.id + ':back';
+        const layBetId = bet.id + ':lay';
+        const backSubmitting = submittingBetId === backBetId;
+        const laySubmitting = submittingBetId === layBetId;
 
         return (
           <View key={bet.id} style={[styles.betSlide, { minHeight: cardHeight }]}> 
@@ -244,7 +271,8 @@ export function BetSwiper({
                     style={[styles.actionBetButton, styles.actionBetButtonBack]}
                     disabled={submittingBetId !== null}
                     onPress={() => onPlaceBet(bet, 'back')}
-                  >
+>
+                    <ButtonBurst active={celebratingBetId === backBetId} />
                     <View style={styles.actionBetTopRow}>
                       <Text style={styles.actionBetSide}>BACK</Text>
                       <Text style={styles.actionBetOdds}>{bet.back.odds.toFixed(2)}x</Text>
@@ -259,7 +287,8 @@ export function BetSwiper({
                     style={[styles.actionBetButton, styles.actionBetButtonLay]}
                     disabled={submittingBetId !== null}
                     onPress={() => onPlaceBet(bet, 'lay')}
-                  >
+>
+                    <ButtonBurst active={celebratingBetId === layBetId} />
                     <View style={styles.actionBetTopRow}>
                       <Text style={styles.actionBetSide}>LAY</Text>
                       <Text style={styles.actionBetOdds}>{bet.lay.odds.toFixed(2)}x</Text>
@@ -277,6 +306,61 @@ export function BetSwiper({
         );
       })}
     </ScrollView>
+  );
+}
+
+const burstVectors = [
+  { x: -26, y: -18, color: '#f97316' },
+  { x: 0, y: -28, color: '#fb7185' },
+  { x: 24, y: -16, color: '#38bdf8' },
+  { x: -22, y: 18, color: '#facc15' },
+  { x: 0, y: 26, color: '#34d399' },
+  { x: 24, y: 18, color: '#c084fc' },
+];
+
+function ButtonBurst({ active }: { active: boolean }) {
+  const progress = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!active) {
+      progress.setValue(0);
+      return;
+    }
+
+    progress.setValue(0);
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: 520,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start();
+  }, [active, progress]);
+
+  if (!active) {
+    return null;
+  }
+
+  return (
+    <View pointerEvents="none" style={styles.buttonBurst}>
+      {burstVectors.map((particle, index) => (
+        <Animated.View
+          key={String(index)}
+          style={[
+            styles.buttonBurstParticle,
+            {
+              backgroundColor: particle.color,
+              opacity: progress.interpolate({ inputRange: [0, 0.75, 1], outputRange: [0, 1, 0] }),
+              transform: [
+                { translateX: progress.interpolate({ inputRange: [0, 1], outputRange: [0, particle.x] }) },
+                { translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [0, particle.y] }) },
+                { scale: progress.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0.3, 1, 0.7] }) },
+                { rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ['0deg', particle.x > 0 ? '28deg' : '-28deg'] }) },
+              ],
+            },
+          ]}
+        />
+      ))}
+    </View>
   );
 }
 

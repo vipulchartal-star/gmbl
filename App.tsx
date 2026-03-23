@@ -65,6 +65,8 @@ export default function App() {
   const [markets, setMarkets] = useState<Market[]>([]);
   const [betSlips, setBetSlips] = useState<BetSlip[]>([]);
   const [betSlipsOpen, setBetSlipsOpen] = useState(false);
+  const [celebratingBetId, setCelebratingBetId] = useState<string | null>(null);
+  const [balanceAlertTick, setBalanceAlertTick] = useState(0);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [authDebugText, setAuthDebugText] = useState<string | null>(null);
 
@@ -329,6 +331,11 @@ export default function App() {
         nextMarkets.push(betMarket);
         return nextMarkets;
       });
+      const placedBetId = bet.id + ':' + choiceKey;
+      setCelebratingBetId(placedBetId);
+      setTimeout(() => {
+        setCelebratingBetId((current) => (current === placedBetId ? null : current));
+      }, 700);
       setCurrentIndex((index) => (index >= betCards.length - 1 ? 0 : index));
       setBetSlips((currentSlips) => [response.bet, ...currentSlips].slice(0, 50));
       await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
@@ -339,6 +346,10 @@ export default function App() {
 
       if (error instanceof ApiError && error.status === 401) {
         await persistSession(null);
+      }
+
+      if (message.toLowerCase().includes('insufficient balance')) {
+        setBalanceAlertTick((tick) => tick + 1);
       }
 
       Alert.alert('Bet failed', message);
@@ -371,6 +382,7 @@ export default function App() {
               sessionLoading={sessionLoading}
               betSlipCount={betSlips.length}
               betSlipsOpen={betSlipsOpen}
+              balanceAlertTick={balanceAlertTick}
             />
             <SwipeIndicator currentIndex={currentIndex} total={betCards.length} />
           </View>
@@ -385,6 +397,7 @@ export default function App() {
               betAmount={betAmount}
               cardHeight={cardHeight}
               currentIndex={currentIndex}
+              celebratingBetId={celebratingBetId}
               onChangeBetAmount={setBetAmount}
               onIndexChange={setCurrentIndex}
               onPlaceBet={placeBet}
