@@ -1,19 +1,21 @@
 import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
-import { useEffect, useState } from 'react';
-import { Alert, Platform, SafeAreaView, ScrollView, useWindowDimensions, View } from 'react-native';
+import { useEffect, useMemo, useState } from 'react';
+import { ActivityIndicator, Alert, Platform, SafeAreaView, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
 import { AccountCard, BetSwiper, ScreenHeader, SwipeIndicator, WarningCard } from './src/appComponents';
 import { styles } from './src/appStyles';
 import {
-  betCards,
+  buildBetCards,
   sessionKey,
   type AuthMode,
   type AuthResponse,
   type BetCard,
   type BetChoiceKey,
   type BetResponse,
+  type MarketsResponse,
   type MeResponse,
+  type Market,
   type SessionState,
 } from './src/appTypes';
 import { createGeneratedCredentials, downloadTextFile, parseCredentialText, readCredentialFile } from './src/credentials';
@@ -48,6 +50,7 @@ const sessionStorage = {
 export default function App() {
   const { height } = useWindowDimensions();
   const [sessionLoading, setSessionLoading] = useState(true);
+  const [marketsLoading, setMarketsLoading] = useState(true);
   const [authBusy, setAuthBusy] = useState(false);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [loginId, setLoginId] = useState('');
@@ -56,10 +59,12 @@ export default function App() {
   const [submittingBetId, setSubmittingBetId] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [session, setSession] = useState<SessionState | null>(null);
+  const [markets, setMarkets] = useState<Market[]>([]);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [authDebugText, setAuthDebugText] = useState<string | null>(null);
 
   const cardHeight = Math.max(420, height - 126);
+  const betCards = useMemo(() => buildBetCards(markets), [markets]);
 
   const persistSession = async (nextSession: SessionState | null) => {
     setSession(nextSession);
@@ -88,7 +93,6 @@ export default function App() {
 
         if (isMounted) {
           setSession({ token: parsed.token, user: response.user });
-          setErrorText(null);
         }
       } catch {
         await sessionStorage.removeItem(sessionKey);
@@ -105,6 +109,40 @@ export default function App() {
       isMounted = false;
     };
   }, []);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadMarkets = async () => {
+      try {
+        const response = await apiRequest<MarketsResponse>('/markets');
+        if (isMounted) {
+          setMarkets(response.markets);
+          setErrorText(null);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorText(error instanceof Error ? error.message : 'Failed to load markets.');
+        }
+      } finally {
+        if (isMounted) {
+          setMarketsLoading(false);
+        }
+      }
+    };
+
+    loadMarkets();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (currentIndex > 0 && currentIndex >= betCards.length) {
+      setCurrentIndex(Math.max(0, betCards.length - 1));
+    }
+  }, [betCards.length, currentIndex]);
 
   const clearAuthForm = () => {
     setPassword('');
@@ -227,6 +265,9 @@ export default function App() {
       };
 
       setSession(nextSession);
+      setMarkets((currentMarkets) =>
+        currentMarkets.map((market) => (market.slug === response.market.slug ? response.market : market)),
+      );
       await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
       setErrorText(null);
       Alert.alert('Bet placed', bet[choiceKey].label + ' for ' + amount.toFixed(2));
@@ -267,15 +308,26 @@ export default function App() {
             />
             <SwipeIndicator currentIndex={currentIndex} total={betCards.length} />
           </View>
-          <BetSwiper
-            bets={betCards}
-            betAmount={betAmount}
-            cardHeight={cardHeight}
-            onChangeBetAmount={setBetAmount}
-            onIndexChange={setCurrentIndex}
-            onPlaceBet={placeBet}
-            submittingBetId={submittingBetId}
-          />
+          {marketsLoading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator size="small" color="#f97316" />
+            </View>
+          ) : betCards.length ? (
+            <BetSwiper
+              bets={betCards}
+              betAmount={betAmount}
+              cardHeight={cardHeight}
+              onChangeBetAmount={setBetAmount}
+              onIndexChange={setCurrentIndex}
+              onPlaceBet={placeBet}
+              submittingBetId={submittingBetId}
+            />
+          ) : (
+            <View style={styles.warningCard}>
+              <Text style={styles.warningTitle}>No Markets</Text>
+              <Text style={styles.warningText}>No betting markets are available from the server.</Text>
+            </View>
+          )}
           {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
           {errorText ? <WarningCard errorText={errorText} /> : null}
         </View>

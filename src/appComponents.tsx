@@ -16,7 +16,7 @@ export function ScreenHeader({ authMode, session }: HeaderProps) {
       <Text style={styles.title}>{session ? 'GMBL' : authMode === 'signup' ? 'Create Account' : 'Welcome Back'}</Text>
       <Text style={styles.subtitle}>
         {session
-          ? 'One outcome per screen. Switch between Back and Lay on the same card.'
+          ? 'One outcome per screen. Use the two action buttons to place Back or Lay instantly.'
           : authMode === 'signup'
             ? 'Create your account with only login id and password.'
             : 'Enter your login id and password. After login you can swipe through markets and place bets instantly.'}
@@ -147,10 +147,6 @@ export function BetSwiper({
   onPlaceBet,
   submittingBetId,
 }: BetSwiperProps) {
-  const [selectedChoices, setSelectedChoices] = useState<Record<string, BetChoiceKey>>(() =>
-    Object.fromEntries(bets.map((bet) => [bet.id, 'back'])) as Record<string, BetChoiceKey>
-  );
-
   return (
     <ScrollView
       style={styles.swiper}
@@ -163,19 +159,25 @@ export function BetSwiper({
       }}
     >
       {bets.map((bet, index) => {
-        const choiceKey = selectedChoices[bet.id] ?? 'back';
-        const choice = bet[choiceKey];
-        const isBack = choiceKey === 'back';
-        const isSubmitting = submittingBetId === bet.id + ':' + choiceKey;
         const amountValue = Number(betAmount);
         const stake = Number.isFinite(amountValue) && amountValue > 0 ? amountValue : 0;
-        const estimatedReturn = stake * choice.odds;
-        const estimatedProfit = estimatedReturn - stake;
-        const helpText = choice.meaning + String.fromCharCode(10, 10) + choice.winText;
+        const backReturn = stake * bet.back.odds;
+        const layReturn = stake * bet.lay.odds;
+        const helpText = [
+          bet.back.label,
+          bet.back.meaning,
+          bet.back.winText,
+          '',
+          bet.lay.label,
+          bet.lay.meaning,
+          bet.lay.winText,
+        ].join(String.fromCharCode(10));
+        const backSubmitting = submittingBetId === bet.id + ':back';
+        const laySubmitting = submittingBetId === bet.id + ':lay';
 
         return (
           <View key={bet.id} style={[styles.betSlide, { minHeight: cardHeight }]}> 
-            <View style={[styles.betSlideInner, isBack ? styles.betSlideBack : styles.betSlideLay]}>
+            <View style={[styles.betSlideInner, styles.betSlideDual]}>
               <View style={styles.betHeroTop}>
                 <Text style={styles.betHeroIndex}>{index + 1} / {bets.length}</Text>
                 <Text style={styles.betHeroMarket}>{bet.market}</Text>
@@ -183,55 +185,15 @@ export function BetSwiper({
               <View style={styles.betHeroBody}>
                 <Text style={styles.betHeroMatch}>{bet.match}</Text>
                 <Text style={styles.betHeroTitle}>{bet.outcomeLabel}</Text>
-                <Text style={styles.betHeroLabel}>{choice.label}</Text>
-                <Text style={styles.betHeroHint}>Choose Back or Lay below for this same outcome.</Text>
+                <Text style={styles.betHeroHint}>Enter a stake, then tap Back or Lay below.</Text>
               </View>
               <View style={styles.betActionPanel}>
                 <View style={styles.betActionHeader}>
                   <Text style={styles.betActionTitle}>Stake</Text>
-                  <View style={styles.betActionHeaderRight}>
-                    <Pressable
-                      style={styles.helpButton}
-                      onPress={() => Alert.alert(choice.label, helpText)}
-                    >
-                      <Text style={styles.helpButtonText}>?</Text>
-                    </Pressable>
-                    <View style={[styles.betSideBadge, isBack ? styles.betSideBack : styles.betSideLay]}>
-                      <Text style={styles.betSideBadgeText}>{choice.direction.toUpperCase()}</Text>
-                    </View>
-                  </View>
-                </View>
-                <View style={styles.choiceRow}>
-                  <Pressable
-                    style={[styles.choiceButton, styles.choiceButtonBack, choiceKey === 'back' ? styles.choiceButtonActive : null]}
-                    onPress={() => setSelectedChoices((current) => ({ ...current, [bet.id]: 'back' }))}
-                  >
-                    <Text style={styles.choiceButtonLabel}>Back</Text>
-                    <Text style={styles.choiceButtonValue}>{bet.back.odds.toFixed(2)}</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.choiceButton, styles.choiceButtonLay, choiceKey === 'lay' ? styles.choiceButtonActive : null]}
-                    onPress={() => setSelectedChoices((current) => ({ ...current, [bet.id]: 'lay' }))}
-                  >
-                    <Text style={styles.choiceButtonLabel}>Lay</Text>
-                    <Text style={styles.choiceButtonValue}>{bet.lay.odds.toFixed(2)}</Text>
+                  <Pressable style={styles.helpButton} onPress={() => Alert.alert(bet.outcomeLabel, helpText)}>
+                    <Text style={styles.helpButtonText}>?</Text>
                   </Pressable>
                 </View>
-                <View style={styles.returnGrid}>
-                  <View style={styles.returnCard}>
-                    <Text style={styles.returnLabel}>Price</Text>
-                    <Text style={styles.returnValue}>{choice.odds.toFixed(2)}x</Text>
-                  </View>
-                  <View style={styles.returnCard}>
-                    <Text style={styles.returnLabel}>Est. Return</Text>
-                    <Text style={styles.returnValue}>{estimatedReturn.toFixed(2)}</Text>
-                  </View>
-                  <View style={styles.returnCard}>
-                    <Text style={styles.returnLabel}>Est. Profit</Text>
-                    <Text style={styles.returnValue}>{estimatedProfit.toFixed(2)}</Text>
-                  </View>
-                </View>
-                <Text style={styles.settlementNote}>Returns shown here are based on the selected price for this exact outcome.</Text>
                 <TextInput
                   keyboardType="numeric"
                   value={betAmount}
@@ -247,13 +209,39 @@ export function BetSwiper({
                     </Pressable>
                   ))}
                 </View>
-                <Pressable
-                  style={[styles.placeBetButton, isBack ? styles.placeBetButtonBack : styles.placeBetButtonLay]}
-                  disabled={submittingBetId !== null}
-                  onPress={() => onPlaceBet(bet, choiceKey)}
-                >
-                  <Text style={styles.placeBetButtonText}>{isSubmitting ? 'Placing...' : choice.label}</Text>
-                </Pressable>
+                <Text style={styles.settlementNote}>Live prices come from the server market pool.</Text>
+                <View style={styles.actionButtonRow}>
+                  <Pressable
+                    style={[styles.actionBetButton, styles.actionBetButtonBack]}
+                    disabled={submittingBetId !== null}
+                    onPress={() => onPlaceBet(bet, 'back')}
+                  >
+                    <View style={styles.actionBetTopRow}>
+                      <Text style={styles.actionBetSide}>BACK</Text>
+                      <Text style={styles.actionBetOdds}>{bet.back.odds.toFixed(2)}x</Text>
+                    </View>
+                    <Text style={styles.actionBetLabel}>{bet.back.label}</Text>
+                    <Text style={styles.actionBetMeta}>
+                      Return {backReturn.toFixed(2)} • Profit {(backReturn - stake).toFixed(2)}
+                    </Text>
+                    <Text style={styles.actionBetCta}>{backSubmitting ? 'Placing...' : 'Bet Back'}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.actionBetButton, styles.actionBetButtonLay]}
+                    disabled={submittingBetId !== null}
+                    onPress={() => onPlaceBet(bet, 'lay')}
+                  >
+                    <View style={styles.actionBetTopRow}>
+                      <Text style={styles.actionBetSide}>LAY</Text>
+                      <Text style={styles.actionBetOdds}>{bet.lay.odds.toFixed(2)}x</Text>
+                    </View>
+                    <Text style={styles.actionBetLabel}>{bet.lay.label}</Text>
+                    <Text style={styles.actionBetMeta}>
+                      Return {layReturn.toFixed(2)} • Profit {(layReturn - stake).toFixed(2)}
+                    </Text>
+                    <Text style={styles.actionBetCta}>{laySubmitting ? 'Placing...' : 'Bet Lay'}</Text>
+                  </Pressable>
+                </View>
               </View>
             </View>
           </View>

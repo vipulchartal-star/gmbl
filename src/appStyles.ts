@@ -177,6 +177,9 @@ export const styles = StyleSheet.create({
   betSlideLay: {
     backgroundColor: '#4a1622',
   },
+  betSlideDual: {
+    backgroundColor: '#142235',
+  },
   betHeroTop: {
     alignItems: 'center',
     flexDirection: 'row',
@@ -317,9 +320,62 @@ export const styles = StyleSheet.create({
     fontWeight: '800',
   },
   settlementNote: {
-    color: '#fca5a5',
+    color: '#cbd5e1',
     fontSize: 12,
     lineHeight: 18,
+  },
+  actionButtonRow: {
+    gap: 12,
+  },
+  actionBetButton: {
+    borderRadius: 18,
+    gap: 8,
+    paddingHorizontal: 16,
+    paddingVertical: 16,
+  },
+  actionBetButtonBack: {
+    backgroundColor: 'rgba(34, 197, 94, 0.2)',
+    borderColor: 'rgba(34, 197, 94, 0.45)',
+    borderWidth: 1,
+  },
+  actionBetButtonLay: {
+    backgroundColor: 'rgba(239, 68, 68, 0.2)',
+    borderColor: 'rgba(239, 68, 68, 0.45)',
+    borderWidth: 1,
+  },
+  actionBetTopRow: {
+    alignItems: 'center',
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  actionBetSide: {
+    color: '#f8fafc',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  actionBetOdds: {
+    color: '#ffffff',
+    fontSize: 24,
+    fontWeight: '900',
+  },
+  actionBetLabel: {
+    color: '#f8fafc',
+    fontSize: 16,
+    fontWeight: '800',
+    lineHeight: 22,
+  },
+  actionBetMeta: {
+    color: '#dbeafe',
+    fontSize: 13,
+    fontWeight: '700',
+    lineHeight: 19,
+  },
+  actionBetCta: {
+    color: '#ffffff',
+    fontSize: 15,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   betAmountInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',

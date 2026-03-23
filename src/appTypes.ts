@@ -46,12 +46,25 @@ export type MeResponse = {
 export type Market = {
   slug: string;
   question: string;
+  match: string;
+  marketLabel: string;
+  outcomeLabel: string;
+  backLabel: string;
+  layLabel: string;
   status: string;
   yesPool: number;
   noPool: number;
   totalPool: number;
   totalBets: number;
+  yesOdds: number;
+  noOdds: number;
+  settledSide?: ApiBetSide | null;
+  settledAt?: string | null;
   updatedAt: string;
+};
+
+export type MarketsResponse = {
+  markets: Market[];
 };
 
 export type BetResponse = {
@@ -69,74 +82,32 @@ export type BetResponse = {
 export const chipAmounts = [10, 25, 50, 100];
 export const sessionKey = 'gmbl-api-session';
 
-export const betCards: BetCard[] = [
-  {
-    id: 'mi-vs-kkr-toss',
-    match: 'MI vs KKR',
-    market: 'Toss',
-    marketSlug: 'mi-vs-kkr-toss',
-    outcomeLabel: 'MI wins the toss',
+const backMeaning = (outcomeLabel: string) => 'Back means you are betting for ' + outcomeLabel.toLowerCase() + '.';
+const backWinText = (outcomeLabel: string) => 'You win if ' + outcomeLabel.toLowerCase() + '. You lose if that does not happen.';
+const layMeaning = (outcomeLabel: string) => 'Lay means you are betting against ' + outcomeLabel.toLowerCase() + '.';
+const layWinText = (outcomeLabel: string) => 'You win if ' + outcomeLabel.toLowerCase() + ' does not happen. You lose if it does happen.';
+
+export const buildBetCards = (markets: Market[]): BetCard[] =>
+  markets.map((market) => ({
+    id: market.slug,
+    match: market.match,
+    market: market.marketLabel,
+    marketSlug: market.slug,
+    outcomeLabel: market.outcomeLabel,
     back: {
       direction: 'back',
       apiSide: 'yes',
-      odds: 1.9,
-      label: 'Back MI to win the toss',
-      meaning: 'Back means you are betting for MI to win the toss.',
-      winText: 'You win if MI wins the toss. You lose if MI does not win the toss.',
+      odds: market.yesOdds,
+      label: market.backLabel,
+      meaning: backMeaning(market.outcomeLabel),
+      winText: backWinText(market.outcomeLabel),
     },
     lay: {
       direction: 'lay',
       apiSide: 'no',
-      odds: 1.92,
-      label: 'Lay MI to win the toss',
-      meaning: 'Lay means you are betting against MI winning the toss.',
-      winText: 'You win if MI does not win the toss. You lose if MI wins the toss.',
+      odds: market.noOdds,
+      label: market.layLabel,
+      meaning: layMeaning(market.outcomeLabel),
+      winText: layWinText(market.outcomeLabel),
     },
-  },
-  {
-    id: 'mi-vs-kkr-bookmaker',
-    match: 'MI vs KKR',
-    market: 'Bookmaker',
-    marketSlug: 'mi-vs-kkr-bookmaker',
-    outcomeLabel: 'MI wins the match',
-    back: {
-      direction: 'back',
-      apiSide: 'yes',
-      odds: 2.18,
-      label: 'Back MI to win',
-      meaning: 'Back means you are betting for MI to win the match.',
-      winText: 'You win if MI wins the match. You lose if MI does not win the match.',
-    },
-    lay: {
-      direction: 'lay',
-      apiSide: 'no',
-      odds: 1.78,
-      label: 'Lay MI to win',
-      meaning: 'Lay means you are betting against MI winning the match.',
-      winText: 'You win if MI does not win the match. You lose if MI wins the match.',
-    },
-  },
-  {
-    id: 'mi-vs-kkr-match-odds',
-    match: 'MI vs KKR',
-    market: 'Match Odds',
-    marketSlug: 'mi-vs-kkr-match-odds',
-    outcomeLabel: 'MI wins the match',
-    back: {
-      direction: 'back',
-      apiSide: 'yes',
-      odds: 2.06,
-      label: 'Back MI to win',
-      meaning: 'Back means you are betting for MI to win the match.',
-      winText: 'You win if MI wins the match. You lose if MI does not win the match.',
-    },
-    lay: {
-      direction: 'lay',
-      apiSide: 'no',
-      odds: 1.84,
-      label: 'Lay MI to win',
-      meaning: 'Lay means you are betting against MI winning the match.',
-      winText: 'You win if MI does not win the match. You lose if MI wins the match.',
-    },
-  },
-];
+  }));

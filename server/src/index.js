@@ -71,6 +71,13 @@ app.get('/health', async (_req, res) => {
   res.json({ ok: true, dbTime: db.rows[0].now });
 });
 
+app.get('/markets', async (_req, res) => {
+  const markets = await withTransaction((client) => ensureConfiguredMarkets(client));
+  res.json({
+    markets: markets.map((market) => sanitizeMarket(market)),
+  });
+});
+
 app.get('/market', async (_req, res) => {
   const markets = await withTransaction((client) => ensureConfiguredMarkets(client));
   res.json({ market: sanitizeMarket(markets[0]) });
@@ -406,7 +413,7 @@ app.post('/bets', requireAuth, async (req, res) => {
       }
 
       const nextBalance = balance - amount;
-      const odds = oddsForSide(marketDefinition, side);
+      const odds = oddsForSide(market, side);
       const betResult = await client.query(
         `insert into bets (market_slug, user_id, side, amount, odds)
          values ($1, $2, $3, $4, $5)
