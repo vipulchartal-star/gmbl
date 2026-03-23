@@ -1,0 +1,545 @@
+%PDF-1.4
+%‚„œ”
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Length 262 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(1. Cover) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(GMBL) Tj
+/F1 14 Tf
+1 0 0 1 54 680 Tm
+(Swipe-first social betting for the next generation of players) Tj
+/F1 14 Tf
+1 0 0 1 54 650 Tm
+(Tagline: One outcome per screen. Bet in seconds.) Tj
+ET
+endstream
+endobj
+4 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 3 0 R >>
+endobj
+5 0 obj
+<< /Length 608 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(2. The Problem) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(Sports betting apps are built like spreadsheets.) Tj
+/F1 14 Tf
+1 0 0 1 54 670 Tm
+(Players face:) Tj
+/F1 14 Tf
+1 0 0 1 62 650 Tm
+(? cluttered market screens) Tj
+/F1 14 Tf
+1 0 0 1 62 630 Tm
+(? slow bet selection flows) Tj
+/F1 14 Tf
+1 0 0 1 62 610 Tm
+(? confusing back/lay mechanics) Tj
+/F1 14 Tf
+1 0 0 1 62 590 Tm
+(? weak product identity for younger mobile-native users) Tj
+/F1 14 Tf
+1 0 0 1 54 560 Tm
+(Most products were designed for desktop-era habits, not) Tj
+/F1 14 Tf
+1 0 0 1 54 540 Tm
+(short-session mobile behavior.) Tj
+ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Length 594 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(3. The Insight) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(A large share of users now discover, compare, and act through) Tj
+/F1 14 Tf
+1 0 0 1 54 680 Tm
+(feed-based interfaces.) Tj
+/F1 14 Tf
+1 0 0 1 54 650 Tm
+(What works on modern mobile:) Tj
+/F1 14 Tf
+1 0 0 1 62 630 Tm
+(? one focused decision at a time) Tj
+/F1 14 Tf
+1 0 0 1 62 610 Tm
+(? immediate context) Tj
+/F1 14 Tf
+1 0 0 1 62 590 Tm
+(? strong visual feedback) Tj
+/F1 14 Tf
+1 0 0 1 62 570 Tm
+(? low-friction action loops) Tj
+/F1 14 Tf
+1 0 0 1 54 540 Tm
+(Betting UX has not fully adapted to this behavior shift.) Tj
+ET
+endstream
+endobj
+8 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 7 0 R >>
+endobj
+9 0 obj
+<< /Length 664 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(4. The Solution) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(GMBL turns betting into a swipeable feed.) Tj
+/F1 14 Tf
+1 0 0 1 54 670 Tm
+(Core experience:) Tj
+/F1 14 Tf
+1 0 0 1 62 650 Tm
+(? one bet card per screen) Tj
+/F1 14 Tf
+1 0 0 1 62 630 Tm
+(? clear Back and Lay actions on the same card) Tj
+/F1 14 Tf
+1 0 0 1 62 610 Tm
+(? live price and return visibility) Tj
+/F1 14 Tf
+1 0 0 1 62 590 Tm
+(? instant bet placement) Tj
+/F1 14 Tf
+1 0 0 1 62 570 Tm
+(? looping feed after each bet) Tj
+/F1 14 Tf
+1 0 0 1 62 550 Tm
+(? top-bar slips and wallet visibility) Tj
+/F1 14 Tf
+1 0 0 1 54 520 Tm
+(This makes betting faster, clearer, and more engaging.) Tj
+ET
+endstream
+endobj
+10 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 9 0 R >>
+endobj
+11 0 obj
+<< /Length 564 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(5. Product Demo) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(Current product flow:) Tj
+/F1 14 Tf
+1 0 0 1 62 680 Tm
+(? create account with login id and password) Tj
+/F1 14 Tf
+1 0 0 1 62 660 Tm
+(? swipe through markets like Toss, Bookmaker, Match Odds) Tj
+/F1 14 Tf
+1 0 0 1 62 640 Tm
+(? tap Back or Lay directly from the card) Tj
+/F1 14 Tf
+1 0 0 1 62 620 Tm
+(? see returns before betting) Tj
+/F1 14 Tf
+1 0 0 1 62 600 Tm
+(? receive visual success feedback on placement) Tj
+/F1 14 Tf
+1 0 0 1 62 580 Tm
+(? view placed bets from the slips menu) Tj
+ET
+endstream
+endobj
+12 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 11 0 R >>
+endobj
+13 0 obj
+<< /Length 535 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(6. Why We Win) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(GMBL is not just another sportsbook skin.) Tj
+/F1 14 Tf
+1 0 0 1 54 670 Tm
+(Differentiators:) Tj
+/F1 14 Tf
+1 0 0 1 62 650 Tm
+(? feed-native betting UX) Tj
+/F1 14 Tf
+1 0 0 1 62 630 Tm
+(? simplified outcome-first decision model) Tj
+/F1 14 Tf
+1 0 0 1 62 610 Tm
+(? explicit education for back/lay betting) Tj
+/F1 14 Tf
+1 0 0 1 62 590 Tm
+(? high-speed one-handed mobile flow) Tj
+/F1 14 Tf
+1 0 0 1 62 570 Tm
+(? designed for repeat action, not menu browsing) Tj
+ET
+endstream
+endobj
+14 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 13 0 R >>
+endobj
+15 0 obj
+<< /Length 731 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(7. Market Opportunity) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(Global sports betting is large and still growing, but) Tj
+/F1 14 Tf
+1 0 0 1 54 680 Tm
+(interface innovation is weak.) Tj
+/F1 14 Tf
+1 0 0 1 54 650 Tm
+(Opportunity areas:) Tj
+/F1 14 Tf
+1 0 0 1 62 630 Tm
+(? younger first-time bettors) Tj
+/F1 14 Tf
+1 0 0 1 62 610 Tm
+(? high-frequency casual players) Tj
+/F1 14 Tf
+1 0 0 1 62 590 Tm
+(? emerging social betting formats) Tj
+/F1 14 Tf
+1 0 0 1 62 570 Tm
+(? creators and communities that want shareable betting) Tj
+/F1 14 Tf
+1 0 0 1 62 550 Tm
+(?   experiences) Tj
+/F1 14 Tf
+1 0 0 1 54 520 Tm
+(We win by improving product experience, not just offering more) Tj
+/F1 14 Tf
+1 0 0 1 54 500 Tm
+(markets.) Tj
+ET
+endstream
+endobj
+16 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 15 0 R >>
+endobj
+17 0 obj
+<< /Length 650 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(8. Business Model) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(Near-term monetization:) Tj
+/F1 14 Tf
+1 0 0 1 62 680 Tm
+(? margin on pricing) Tj
+/F1 14 Tf
+1 0 0 1 62 660 Tm
+(? market-making spread) Tj
+/F1 14 Tf
+1 0 0 1 62 640 Tm
+(? tournament or event promotions) Tj
+/F1 14 Tf
+1 0 0 1 62 620 Tm
+(? VIP and retention incentives) Tj
+/F1 14 Tf
+1 0 0 1 54 590 Tm
+(Longer-term expansion:) Tj
+/F1 14 Tf
+1 0 0 1 62 570 Tm
+(? creator-led markets) Tj
+/F1 14 Tf
+1 0 0 1 62 550 Tm
+(? sponsored bet feeds) Tj
+/F1 14 Tf
+1 0 0 1 62 530 Tm
+(? community competitions) Tj
+/F1 14 Tf
+1 0 0 1 62 510 Tm
+(? premium analytics and engagement tools) Tj
+ET
+endstream
+endobj
+18 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 17 0 R >>
+endobj
+19 0 obj
+<< /Length 681 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(9. Go-To-Market) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(Launch wedge:) Tj
+/F1 14 Tf
+1 0 0 1 62 680 Tm
+(? cricket-first audience with high mobile engagement) Tj
+/F1 14 Tf
+1 0 0 1 62 660 Tm
+(? focus on marquee matches and simple high-intent markets) Tj
+/F1 14 Tf
+1 0 0 1 62 640 Tm
+(? short-form creator distribution) Tj
+/F1 14 Tf
+1 0 0 1 62 620 Tm
+(? referral loops around bet slips and social sharing) Tj
+/F1 14 Tf
+1 0 0 1 54 590 Tm
+(Growth loops:) Tj
+/F1 14 Tf
+1 0 0 1 62 570 Tm
+(? swipe, bet, share) Tj
+/F1 14 Tf
+1 0 0 1 62 550 Tm
+(? return to app for settlement and next market) Tj
+/F1 14 Tf
+1 0 0 1 62 530 Tm
+(? repeat via event-driven engagement) Tj
+ET
+endstream
+endobj
+20 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 19 0 R >>
+endobj
+21 0 obj
+<< /Length 797 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(10. Product Roadmap) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(Phase 1:) Tj
+/F1 14 Tf
+1 0 0 1 62 680 Tm
+(? stable real-money style betting flow) Tj
+/F1 14 Tf
+1 0 0 1 62 660 Tm
+(? settlement and payout ops) Tj
+/F1 14 Tf
+1 0 0 1 62 640 Tm
+(? cleaner market management) Tj
+/F1 14 Tf
+1 0 0 1 54 610 Tm
+(Phase 2:) Tj
+/F1 14 Tf
+1 0 0 1 62 590 Tm
+(? live odds ingestion) Tj
+/F1 14 Tf
+1 0 0 1 62 570 Tm
+(? market depth and liquidity logic) Tj
+/F1 14 Tf
+1 0 0 1 62 550 Tm
+(? richer slips and portfolio tracking) Tj
+/F1 14 Tf
+1 0 0 1 54 520 Tm
+(Phase 3:) Tj
+/F1 14 Tf
+1 0 0 1 62 500 Tm
+(? social features) Tj
+/F1 14 Tf
+1 0 0 1 62 480 Tm
+(? creator distribution) Tj
+/F1 14 Tf
+1 0 0 1 62 460 Tm
+(? personalized feed ranking) Tj
+/F1 14 Tf
+1 0 0 1 62 440 Tm
+(? multi-match expansion) Tj
+ET
+endstream
+endobj
+22 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 21 0 R >>
+endobj
+23 0 obj
+<< /Length 679 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(11. Traction / Current Build) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(Already implemented:) Tj
+/F1 14 Tf
+1 0 0 1 62 680 Tm
+(? auth and wallet flow) Tj
+/F1 14 Tf
+1 0 0 1 62 660 Tm
+(? market settlement and payout logic) Tj
+/F1 14 Tf
+1 0 0 1 62 640 Tm
+(? server-backed odds) Tj
+/F1 14 Tf
+1 0 0 1 62 620 Tm
+(? swipe feed betting interface) Tj
+/F1 14 Tf
+1 0 0 1 62 600 Tm
+(? bet slips) Tj
+/F1 14 Tf
+1 0 0 1 62 580 Tm
+(? instant UI feedback states) Tj
+/F1 14 Tf
+1 0 0 1 54 550 Tm
+(What this proves:) Tj
+/F1 14 Tf
+1 0 0 1 62 530 Tm
+(? the core loop is already functional) Tj
+/F1 14 Tf
+1 0 0 1 62 510 Tm
+(? the product direction is tangible, not conceptual) Tj
+ET
+endstream
+endobj
+24 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 23 0 R >>
+endobj
+25 0 obj
+<< /Length 634 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(12. The Ask) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(We are raising to accelerate product, licensing, and) Tj
+/F1 14 Tf
+1 0 0 1 54 680 Tm
+(go-to-market.) Tj
+/F1 14 Tf
+1 0 0 1 54 650 Tm
+(Use of funds:) Tj
+/F1 14 Tf
+1 0 0 1 62 630 Tm
+(? live odds and market infrastructure) Tj
+/F1 14 Tf
+1 0 0 1 62 610 Tm
+(? compliance and operational readiness) Tj
+/F1 14 Tf
+1 0 0 1 62 590 Tm
+(? mobile product polish) Tj
+/F1 14 Tf
+1 0 0 1 62 570 Tm
+(? user acquisition and retention systems) Tj
+/F1 14 Tf
+1 0 0 1 54 540 Tm
+(Goal: build the most intuitive betting interface in the) Tj
+/F1 14 Tf
+1 0 0 1 54 520 Tm
+(market.) Tj
+ET
+endstream
+endobj
+26 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 25 0 R >>
+endobj
+27 0 obj
+<< /Length 382 >>
+stream
+BT
+/F2 24 Tf
+1 0 0 1 54 742 Tm
+(13. Closing) Tj
+/F1 14 Tf
+1 0 0 1 54 700 Tm
+(GMBL rethinks betting for mobile-native behavior.) Tj
+/F1 14 Tf
+1 0 0 1 54 670 Tm
+(Not more menus.) Tj
+/F1 14 Tf
+1 0 0 1 54 650 Tm
+(Not more clutter.) Tj
+/F1 14 Tf
+1 0 0 1 54 630 Tm
+(Just faster decisions, clearer actions, and a product users) Tj
+/F1 14 Tf
+1 0 0 1 54 610 Tm
+(actually want to open.) Tj
+ET
+endstream
+endobj
+28 0 obj
+<< /Type /Page /Parent 29 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R >> >> /Contents 27 0 R >>
+endobj
+29 0 obj
+<< /Type /Pages /Kids [ 4 0 R 6 0 R 8 0 R 10 0 R 12 0 R 14 0 R 16 0 R 18 0 R 20 0 R 22 0 R 24 0 R 26 0 R 28 0 R ] /Count 13 >>
+endobj
+30 0 obj
+<< /Type /Catalog /Pages 29 0 R >>
+endobj
+xref
+0 31
+0000000000 65535 f 
+0000000015 00000 n 
+0000000085 00000 n 
+0000000160 00000 n 
+0000000473 00000 n 
+0000000610 00000 n 
+0000001269 00000 n 
+0000001406 00000 n 
+0000002051 00000 n 
+0000002188 00000 n 
+0000002903 00000 n 
+0000003041 00000 n 
+0000003657 00000 n 
+0000003796 00000 n 
+0000004383 00000 n 
+0000004522 00000 n 
+0000005305 00000 n 
+0000005444 00000 n 
+0000006146 00000 n 
+0000006285 00000 n 
+0000007018 00000 n 
+0000007157 00000 n 
+0000008006 00000 n 
+0000008145 00000 n 
+0000008876 00000 n 
+0000009015 00000 n 
+0000009701 00000 n 
+0000009840 00000 n 
+0000010274 00000 n 
+0000010413 00000 n 
+0000010556 00000 n 
+trailer
+<< /Size 31 /Root 30 0 R >>
+startxref
+10607
+%%EOF
