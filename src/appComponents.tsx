@@ -182,6 +182,10 @@ export function BetSwiper({
                     <Text style={styles.betSideBadgeText}>{bet.side.toUpperCase()}</Text>
                   </View>
                 </View>
+                <View style={styles.betMeaningBox}>
+                  <Text style={styles.betMeaningTitle}>{isBack ? 'Back means you bet for it to happen.' : 'Lay means you bet against it happening.'}</Text>
+                  <Text style={styles.betMeaningText}>{isBack ? 'If this outcome happens, your back bet is the winning side.' : 'If this outcome does not happen, your lay bet is the winning side.'}</Text>
+                </View>
                 <TextInput
                   keyboardType="numeric"
                   value={betAmount}

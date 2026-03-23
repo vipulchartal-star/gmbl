@@ -239,6 +239,24 @@ export const styles = StyleSheet.create({
     fontSize: 18,
     fontWeight: '800',
   },
+  betMeaningBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.06)',
+    borderRadius: 16,
+    gap: 4,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+  },
+  betMeaningTitle: {
+    color: '#f8fafc',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  betMeaningText: {
+    color: '#cbd5e1',
+    fontSize: 13,
+    lineHeight: 18,
+  },
   betAmountInput: {
     backgroundColor: 'rgba(255, 255, 255, 0.08)',
     borderColor: 'rgba(255, 255, 255, 0.18)',
