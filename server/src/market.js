@@ -3,7 +3,7 @@ const houseMargin = 0.04;
 const minOdds = 1.05;
 const maxOdds = 12;
 
-export const configuredMarkets = [
+const baseMarkets = [
   {
     slug: 'mi-vs-kkr-toss',
     question: 'MI vs KKR Toss',
@@ -32,6 +32,27 @@ export const configuredMarkets = [
     layLabel: 'Lay MI to win',
   },
 ];
+
+const iplBallMarkets = Array.from({ length: 20 }, (_over, overIndex) =>
+  Array.from({ length: 6 }, (_ball, ballIndex) => {
+    const overNumber = overIndex + 1;
+    const ballNumber = ballIndex + 1;
+    const ballCode = overNumber + '-' + ballNumber;
+    const ballLabel = overNumber + '.' + ballNumber;
+
+    return {
+      slug: 'ipl-ball-' + ballCode,
+      question: 'IPL Over ' + ballLabel + ' Boundary',
+      match: 'Indian Premier League',
+      marketLabel: 'Over ' + ballLabel,
+      outcomeLabel: 'a boundary is scored on ball ' + ballLabel,
+      backLabel: 'Back boundary on ball ' + ballLabel,
+      layLabel: 'Lay boundary on ball ' + ballLabel,
+    };
+  }),
+).flat();
+
+export const configuredMarkets = [...baseMarkets, ...iplBallMarkets];
 
 const marketInsertSql = 'insert into markets (slug, question) values ($' + '1, $' + '2) on conflict (slug) do nothing';
 const marketListSql = 'select * from markets where slug = any($' + '1::text[]) order by array_position($' + '1::text[], slug)';
