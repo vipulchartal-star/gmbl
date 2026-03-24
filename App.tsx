@@ -13,6 +13,7 @@ import {
   type AuthResponse,
   type BetCard,
   type BetChoiceKey,
+  type BetOption,
   type BetResponse,
   type BetSlip,
   type MarketsResponse,
@@ -295,7 +296,7 @@ function MainApp() {
     }
   };
 
-  const placeBet = async (bet: BetCard, choiceKey: BetChoiceKey) => {
+  const placeBet = async (option: BetOption, choiceKey: BetChoiceKey) => {
     if (!session) {
       Alert.alert('Login required', 'Create an account or log in before placing a bet.');
       return;
@@ -308,13 +309,13 @@ function MainApp() {
     }
 
     try {
-      const choice = bet[choiceKey];
-      setSubmittingBetId(bet.id + ':' + choiceKey);
+      const choice = option[choiceKey];
+      setSubmittingBetId(option.id + ':' + choiceKey);
       const response = await apiRequest<BetResponse>('/bets', {
         method: 'POST',
         token: session.token,
         body: {
-          marketSlug: bet.marketSlug,
+          marketSlug: option.marketSlug,
           side: choice.apiSide,
           amount,
         },
@@ -342,7 +343,7 @@ function MainApp() {
         nextMarkets.push(betMarket);
         return nextMarkets;
       });
-      const placedBetId = bet.id + ':' + choiceKey;
+      const placedBetId = option.id + ':' + choiceKey;
       setCelebratingBetId(placedBetId);
       setTimeout(() => {
         setCelebratingBetId((current) => (current === placedBetId ? null : current));
@@ -351,7 +352,7 @@ function MainApp() {
       setBetSlips((currentSlips) => [response.bet, ...currentSlips].slice(0, 50));
       await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
       setErrorText(null);
-      Alert.alert('Bet placed', bet[choiceKey].label + ' for ' + amount.toFixed(2));
+      Alert.alert('Bet placed', option[choiceKey].label + ' for ' + amount.toFixed(2));
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Bet placement failed.';
 

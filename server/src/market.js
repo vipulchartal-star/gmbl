@@ -3,6 +3,21 @@ const houseMargin = 0.04;
 const minOdds = 1.05;
 const maxOdds = 12;
 
+const ballOutcomeDefinitions = [
+  { key: 'dot', label: '0 runs', description: 'dot ball', sortOrder: 1 },
+  { key: 'single', label: '1 run', description: '1 run', sortOrder: 2 },
+  { key: 'double', label: '2 runs', description: '2 runs', sortOrder: 3 },
+  { key: 'triple', label: '3 runs', description: '3 runs', sortOrder: 4 },
+  { key: 'four', label: '4 runs', description: '4 runs', sortOrder: 5 },
+  { key: 'five', label: '5 runs', description: '5 runs', sortOrder: 6 },
+  { key: 'six', label: '6 runs', description: '6 runs', sortOrder: 7 },
+  { key: 'wicket', label: 'Wicket', description: 'a wicket', sortOrder: 8 },
+  { key: 'wide', label: 'Wide', description: 'a wide is called', sortOrder: 9 },
+  { key: 'no-ball', label: 'No Ball', description: 'a no ball is called', sortOrder: 10 },
+  { key: 'bye', label: 'Bye', description: 'bye runs are scored', sortOrder: 11 },
+  { key: 'leg-bye', label: 'Leg Bye', description: 'leg bye runs are scored', sortOrder: 12 },
+];
+
 const baseMarkets = [
   {
     slug: 'mi-vs-kkr-toss',
@@ -12,6 +27,7 @@ const baseMarkets = [
     outcomeLabel: 'MI wins the toss',
     backLabel: 'Back MI to win the toss',
     layLabel: 'Lay MI to win the toss',
+    marketType: 'standard',
   },
   {
     slug: 'mi-vs-kkr-bookmaker',
@@ -21,6 +37,7 @@ const baseMarkets = [
     outcomeLabel: 'MI wins the match',
     backLabel: 'Back MI to win',
     layLabel: 'Lay MI to win',
+    marketType: 'standard',
   },
   {
     slug: 'mi-vs-kkr-match-odds',
@@ -30,6 +47,7 @@ const baseMarkets = [
     outcomeLabel: 'MI wins the match',
     backLabel: 'Back MI to win',
     layLabel: 'Lay MI to win',
+    marketType: 'standard',
   },
 ];
 
@@ -40,17 +58,24 @@ const iplBallMarkets = Array.from({ length: 20 }, (_over, overIndex) =>
     const ballCode = overNumber + '-' + ballNumber;
     const ballLabel = overNumber + '.' + ballNumber;
 
-    return {
-      slug: 'ipl-ball-' + ballCode,
-      question: 'IPL Over ' + ballLabel + ' Boundary',
+    return ballOutcomeDefinitions.map((outcome) => ({
+      slug: 'ipl-ball-' + ballCode + '-' + outcome.key,
+      question: 'IPL Over ' + ballLabel + ' ' + outcome.label,
       match: 'Indian Premier League',
-      marketLabel: 'Over ' + ballLabel,
-      outcomeLabel: 'a boundary is scored on ball ' + ballLabel,
-      backLabel: 'Back boundary on ball ' + ballLabel,
-      layLabel: 'Lay boundary on ball ' + ballLabel,
-    };
+      marketLabel: 'Ball Outcome',
+      outcomeLabel: outcome.description + ' occurs on ball ' + ballLabel,
+      backLabel: 'Back ' + outcome.label + ' on ball ' + ballLabel,
+      layLabel: 'Lay ' + outcome.label + ' on ball ' + ballLabel,
+      marketType: 'ball',
+      over: overNumber,
+      ball: ballNumber,
+      ballLabel,
+      optionKey: outcome.key,
+      optionLabel: outcome.label,
+      optionOrder: outcome.sortOrder,
+    }));
   }),
-).flat();
+).flat(2);
 
 export const configuredMarkets = [...baseMarkets, ...iplBallMarkets];
 
@@ -87,6 +112,13 @@ export const sanitizeMarket = (row) => {
     outcomeLabel: definition?.outcomeLabel ?? row.question,
     backLabel: definition?.backLabel ?? ('Back ' + row.question),
     layLabel: definition?.layLabel ?? ('Lay ' + row.question),
+    marketType: definition?.marketType ?? 'standard',
+    over: definition?.over ?? null,
+    ball: definition?.ball ?? null,
+    ballLabel: definition?.ballLabel ?? null,
+    optionKey: definition?.optionKey ?? null,
+    optionLabel: definition?.optionLabel ?? null,
+    optionOrder: definition?.optionOrder ?? null,
     status: row.status,
     yesPool: Number(row.yes_pool),
     noPool: Number(row.no_pool),

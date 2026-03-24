@@ -235,6 +235,10 @@ export const styles = StyleSheet.create({
     justifyContent: 'center',
     gap: 10,
   },
+  betHeroBodyCompact: {
+    gap: 6,
+    marginTop: 12,
+  },
   betHeroMatch: {
     color: '#cbd5e1',
     fontSize: 18,
@@ -247,6 +251,12 @@ export const styles = StyleSheet.create({
     letterSpacing: 0.4,
     lineHeight: 44,
   },
+  betHeroTitleCompact: {
+    color: '#ffffff',
+    fontSize: 28,
+    fontWeight: '900',
+    lineHeight: 32,
+  },
   betHeroLabel: {
     color: '#ffffff',
     fontSize: 28,
@@ -258,6 +268,11 @@ export const styles = StyleSheet.create({
     fontSize: 15,
     lineHeight: 22,
     maxWidth: '85%',
+  },
+  betHeroHintFull: {
+    color: '#dbeafe',
+    fontSize: 14,
+    lineHeight: 20,
   },
   betActionPanel: {
     backgroundColor: 'rgba(8, 15, 23, 0.62)',
@@ -356,6 +371,72 @@ export const styles = StyleSheet.create({
     color: '#cbd5e1',
     fontSize: 12,
     lineHeight: 18,
+  },
+  ballOptionList: {
+    maxHeight: 360,
+  },
+  ballOptionCard: {
+    backgroundColor: 'rgba(255, 255, 255, 0.04)',
+    borderColor: 'rgba(255, 255, 255, 0.08)',
+    borderRadius: 16,
+    borderWidth: 1,
+    gap: 10,
+    marginBottom: 10,
+    padding: 12,
+  },
+  ballOptionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  ballOptionLabelWrap: {
+    flex: 1,
+    gap: 4,
+  },
+  ballOptionLabel: {
+    color: '#f8fafc',
+    fontSize: 16,
+    fontWeight: '800',
+  },
+  ballOptionMeta: {
+    color: '#cbd5e1',
+    fontSize: 12,
+    lineHeight: 18,
+  },
+  ballOptionButtonRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  ballOptionButton: {
+    borderRadius: 16,
+    flex: 1,
+    gap: 6,
+    overflow: 'hidden',
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+    position: 'relative',
+  },
+  ballOptionButtonSide: {
+    color: '#f8fafc',
+    fontSize: 11,
+    fontWeight: '900',
+    letterSpacing: 0.8,
+  },
+  ballOptionButtonOdds: {
+    color: '#ffffff',
+    fontSize: 20,
+    fontWeight: '900',
+  },
+  ballOptionButtonCta: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '800',
+    lineHeight: 18,
+  },
+  ballOptionButtonMeta: {
+    color: '#dbeafe',
+    fontSize: 11,
+    fontWeight: '700',
+    lineHeight: 16,
   },
   actionButtonRow: {
     gap: 12,

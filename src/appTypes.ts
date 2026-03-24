@@ -12,14 +12,22 @@ export type BetChoice = {
   winText: string;
 };
 
+export type BetOption = {
+  id: string;
+  marketSlug: string;
+  optionLabel: string;
+  outcomeLabel: string;
+  back: BetChoice;
+  lay: BetChoice;
+};
+
 export type BetCard = {
   id: string;
   match: string;
   market: string;
-  marketSlug: string;
-  outcomeLabel: string;
-  back: BetChoice;
-  lay: BetChoice;
+  title: string;
+  subtitle: string;
+  options: BetOption[];
 };
 
 export type SessionUser = {
@@ -51,6 +59,13 @@ export type Market = {
   outcomeLabel: string;
   backLabel: string;
   layLabel: string;
+  marketType: string;
+  over?: number | null;
+  ball?: number | null;
+  ballLabel?: string | null;
+  optionKey?: string | null;
+  optionLabel?: string | null;
+  optionOrder?: number | null;
   status: string;
   yesPool: number;
   noPool: number;
@@ -94,27 +109,96 @@ const backWinText = (outcomeLabel: string) => 'You win if ' + outcomeLabel.toLow
 const layMeaning = (outcomeLabel: string) => 'Lay means you are betting against ' + outcomeLabel.toLowerCase() + '.';
 const layWinText = (outcomeLabel: string) => 'You win if ' + outcomeLabel.toLowerCase() + ' does not happen. You lose if it does happen.';
 
-export const buildBetCards = (markets: Market[]): BetCard[] =>
-  markets.map((market) => ({
-    id: market.slug,
-    match: market.match,
-    market: market.marketLabel,
-    marketSlug: market.slug,
-    outcomeLabel: market.outcomeLabel,
-    back: {
-      direction: 'back',
-      apiSide: 'yes',
-      odds: market.yesOdds,
-      label: market.backLabel,
-      meaning: backMeaning(market.outcomeLabel),
-      winText: backWinText(market.outcomeLabel),
-    },
-    lay: {
-      direction: 'lay',
-      apiSide: 'no',
-      odds: market.noOdds,
-      label: market.layLabel,
-      meaning: layMeaning(market.outcomeLabel),
-      winText: layWinText(market.outcomeLabel),
-    },
-  }));
+const compareMarkets = (left: Market, right: Market) => {
+  const leftBall = left.marketType === 'ball';
+  const rightBall = right.marketType === 'ball';
+
+  if (leftBall && !rightBall) {
+    return 1;
+  }
+
+  if (!leftBall && rightBall) {
+    return -1;
+  }
+
+  if (leftBall && rightBall) {
+    const overDelta = (left.over ?? 0) - (right.over ?? 0);
+    if (overDelta !== 0) {
+      return overDelta;
+    }
+
+    const ballDelta = (left.ball ?? 0) - (right.ball ?? 0);
+    if (ballDelta !== 0) {
+      return ballDelta;
+    }
+
+    return (left.optionOrder ?? 0) - (right.optionOrder ?? 0);
+  }
+
+  return left.marketLabel.localeCompare(right.marketLabel);
+};
+
+export const buildBetCards = (markets: Market[]): BetCard[] => {
+  const cards: BetCard[] = [];
+  const groupedBallCards = new Map<string, BetCard>();
+  const sortedMarkets = [...markets].sort(compareMarkets);
+
+  for (const market of sortedMarkets) {
+    const option: BetOption = {
+      id: market.slug,
+      marketSlug: market.slug,
+      optionLabel: market.optionLabel ?? market.marketLabel,
+      outcomeLabel: market.outcomeLabel,
+      back: {
+        direction: 'back',
+        apiSide: 'yes',
+        odds: market.yesOdds,
+        label: market.backLabel,
+        meaning: backMeaning(market.outcomeLabel),
+        winText: backWinText(market.outcomeLabel),
+      },
+      lay: {
+        direction: 'lay',
+        apiSide: 'no',
+        odds: market.noOdds,
+        label: market.layLabel,
+        meaning: layMeaning(market.outcomeLabel),
+        winText: layWinText(market.outcomeLabel),
+      },
+    };
+
+    if (market.marketType === 'ball' && market.over && market.ball) {
+      const cardId = 'ball-' + market.over + '-' + market.ball;
+      const existing = groupedBallCards.get(cardId);
+
+      if (existing) {
+        existing.options.push(option);
+        continue;
+      }
+
+      const card: BetCard = {
+        id: cardId,
+        match: market.match,
+        market: market.marketLabel,
+        title: 'Over ' + market.over,
+        subtitle: 'Ball ' + market.ball + ' • Choose the exact outcome for this delivery',
+        options: [option],
+      };
+
+      groupedBallCards.set(cardId, card);
+      cards.push(card);
+      continue;
+    }
+
+    cards.push({
+      id: market.slug,
+      match: market.match,
+      market: market.marketLabel,
+      title: market.outcomeLabel,
+      subtitle: 'Choose whether to back or lay this outcome.',
+      options: [option],
+    });
+  }
+
+  return cards;
+};
