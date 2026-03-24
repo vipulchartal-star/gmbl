@@ -17,4 +17,6 @@ export const config = {
   defaultMarketSlug: process.env.DEFAULT_MARKET_SLUG ?? 'live-yes-no',
   defaultMarketQuestion: process.env.DEFAULT_MARKET_QUESTION ?? 'Will the outcome be YES?',
   signupStartingBalance: Number(process.env.SIGNUP_STARTING_BALANCE ?? 1000),
+  oddsApiKey: process.env.ODDS_API_KEY ?? null,
+  oddsApiBaseUrl: process.env.ODDS_API_BASE_URL ?? 'https://api.the-odds-api.com/v4',
 };

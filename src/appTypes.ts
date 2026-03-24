@@ -101,6 +101,46 @@ export type BetResponse = {
   bet: BetSlip;
 };
 
+
+export type ExternalOddsOutcome = {
+  name: string;
+  price: number;
+  point?: number;
+};
+
+export type ExternalOddsMarket = {
+  key: string;
+  lastUpdate: string;
+  outcomes: ExternalOddsOutcome[];
+};
+
+export type ExternalOddsBookmaker = {
+  key: string;
+  title: string;
+  lastUpdate: string;
+  markets: ExternalOddsMarket[];
+};
+
+export type ExternalOddsEvent = {
+  id: string;
+  sportKey: string;
+  sportTitle: string;
+  commenceTime: string;
+  homeTeam: string;
+  awayTeam: string;
+  bookmakers: ExternalOddsBookmaker[];
+};
+
+export type ExternalOddsResponse = {
+  sport: string;
+  regions: string | null;
+  markets: string | null;
+  bookmakers: string | null;
+  oddsFormat: string | null;
+  dateFormat: string | null;
+  events: ExternalOddsEvent[];
+};
+
 export const chipAmounts = [10, 25, 50, 100];
 export const sessionKey = 'gmbl-api-session';
 

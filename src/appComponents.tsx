@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Animated, Easing, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 
 import { styles } from './appStyles';
-import { chipAmounts, type AuthMode, type BetCard, type BetChoiceKey, type BetOption, type BetSlip, type Market, type SessionState } from './appTypes';
+import { chipAmounts, type AuthMode, type BetCard, type BetChoiceKey, type BetOption, type BetSlip, type ExternalOddsResponse, type Market, type SessionState } from './appTypes';
 
 type HeaderProps = {
   authMode: AuthMode;
@@ -360,6 +360,173 @@ function ButtonBurst({ active }: { active: boolean }) {
         />
       ))}
     </View>
+  );
+}
+
+
+export function ViewModeToggle({
+  view,
+  onChangeView,
+}: {
+  view: 'swipe' | 'board';
+  onChangeView: (view: 'swipe' | 'board') => void;
+}) {
+  return (
+    <View style={styles.viewToggleRow}>
+      <Pressable
+        style={[styles.viewTogglePill, view === 'swipe' ? styles.viewTogglePillActive : null]}
+        onPress={() => onChangeView('swipe')}
+      >
+        <Text style={styles.viewToggleText}>Swipe</Text>
+      </Pressable>
+      <Pressable
+        style={[styles.viewTogglePill, view === 'board' ? styles.viewTogglePillActive : null]}
+        onPress={() => onChangeView('board')}
+      >
+        <Text style={styles.viewToggleText}>Board</Text>
+      </Pressable>
+    </View>
+  );
+}
+
+type MarketBoardProps = {
+  bets: BetCard[];
+  betAmount: string;
+  celebratingBetId: string | null;
+  externalOdds: ExternalOddsResponse | null;
+  externalOddsLoading: boolean;
+  onChangeBetAmount: (value: string) => void;
+  onPlaceBet: (option: BetOption, choiceKey: BetChoiceKey) => void;
+  submittingBetId: string | null;
+};
+
+export function MarketBoard({
+  bets,
+  betAmount,
+  celebratingBetId,
+  externalOdds,
+  externalOddsLoading,
+  onChangeBetAmount,
+  onPlaceBet,
+  submittingBetId,
+}: MarketBoardProps) {
+  const amountValue = Number(betAmount);
+  const stake = Number.isFinite(amountValue) && amountValue > 0 ? amountValue : 0;
+
+  return (
+    <ScrollView style={styles.marketBoard} contentContainerStyle={styles.marketBoardContent} showsVerticalScrollIndicator={false}>
+      <View style={styles.marketBoardToolbar}>
+        <Text style={styles.marketBoardTitle}>Odds Board</Text>
+        <TextInput
+          keyboardType="numeric"
+          value={betAmount}
+          onChangeText={onChangeBetAmount}
+          placeholder="10"
+          placeholderTextColor="#94a3b8"
+          style={[styles.betAmountInput, styles.marketBoardStakeInput]}
+        />
+      </View>
+      <View style={styles.chipRow}>
+        {chipAmounts.map((amount) => (
+          <Pressable key={amount} style={styles.chip} onPress={() => onChangeBetAmount(String(amount))}>
+            <Text style={styles.chipText}>{amount}</Text>
+          </Pressable>
+        ))}
+      </View>
+      <View style={styles.marketBoardSection}>
+        <Text style={styles.marketBoardSectionTitle}>External Cricket Odds</Text>
+        {externalOddsLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="small" color="#f97316" />
+          </View>
+        ) : externalOdds?.events.length ? (
+          externalOdds.events.map((event) => (
+            <View key={event.id} style={styles.marketBoardExternalCard}>
+              <Text style={styles.marketBoardExternalTitle}>{event.homeTeam} vs {event.awayTeam}</Text>
+              <Text style={styles.marketBoardExternalMeta}>{new Date(event.commenceTime).toLocaleString()} • {event.sportTitle}</Text>
+              {event.bookmakers.map((bookmaker) => (
+                <View key={bookmaker.key} style={styles.marketBoardExternalBookmaker}>
+                  <Text style={styles.marketBoardExternalBookmakerTitle}>{bookmaker.title}</Text>
+                  {bookmaker.markets.map((market) => (
+                    <View key={bookmaker.key + ':' + market.key} style={styles.marketBoardExternalMarket}>
+                      <Text style={styles.marketBoardExternalMarketKey}>{market.key}</Text>
+                      {market.outcomes.map((outcome) => (
+                        <View key={market.key + ':' + outcome.name} style={styles.marketBoardExternalOutcomeRow}>
+                          <Text style={styles.marketBoardExternalOutcomeName}>{outcome.name}</Text>
+                          <Text style={styles.marketBoardExternalOutcomePrice}>{outcome.price}{outcome.point !== undefined ? ' • ' + outcome.point : ''}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ))}
+                </View>
+              ))}
+            </View>
+          ))
+        ) : (
+          <Text style={styles.betSlipsEmpty}>No external odds returned from The Odds API.</Text>
+        )}
+      </View>
+      <View style={styles.marketBoardSection}>
+        <Text style={styles.marketBoardSectionTitle}>Internal Bet Markets</Text>
+      {bets.map((bet) => (
+        <View key={bet.id} style={styles.marketBoardCard}>
+          <View style={styles.marketBoardCardHeader}>
+            <View style={styles.marketBoardCardCopy}>
+              <Text style={styles.marketBoardCardEyebrow}>{bet.market}</Text>
+              <Text style={styles.marketBoardCardTitle}>{bet.title}</Text>
+              <Text style={styles.marketBoardCardSubtitle}>{bet.subtitle}</Text>
+            </View>
+            <Text style={styles.marketBoardCardMatch}>{bet.match}</Text>
+          </View>
+          {bet.options.map((option) => {
+            const backBetId = option.id + ':back';
+            const layBetId = option.id + ':lay';
+            const backSubmitting = submittingBetId === backBetId;
+            const laySubmitting = submittingBetId === layBetId;
+            const backReturn = stake * option.back.odds;
+            const layReturn = stake * option.lay.odds;
+
+            return (
+              <View key={option.id} style={styles.marketBoardRow}>
+                <View style={styles.marketBoardOptionCopy}>
+                  <Text style={styles.marketBoardOptionLabel}>{option.optionLabel}</Text>
+                  <Text style={styles.marketBoardOptionMeta}>{option.outcomeLabel}</Text>
+                </View>
+                <View style={styles.marketBoardOddsCell}>
+                  <Text style={styles.marketBoardOddsLabel}>BACK</Text>
+                  <Text style={styles.marketBoardOddsValue}>{option.back.odds.toFixed(2)}x</Text>
+                  <Text style={styles.marketBoardOddsMeta}>{backReturn.toFixed(2)} rtn</Text>
+                </View>
+                <View style={styles.marketBoardOddsCell}>
+                  <Text style={styles.marketBoardOddsLabel}>LAY</Text>
+                  <Text style={styles.marketBoardOddsValue}>{option.lay.odds.toFixed(2)}x</Text>
+                  <Text style={styles.marketBoardOddsMeta}>{layReturn.toFixed(2)} rtn</Text>
+                </View>
+                <View style={styles.marketBoardActionColumn}>
+                  <Pressable
+                    style={[styles.marketBoardActionButton, styles.actionBetButtonBack]}
+                    disabled={submittingBetId !== null}
+                    onPress={() => onPlaceBet(option, 'back')}
+                  >
+                    <ButtonBurst active={celebratingBetId === backBetId} />
+                    <Text style={styles.marketBoardActionText}>{backSubmitting ? 'Placing' : 'Back'}</Text>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.marketBoardActionButton, styles.actionBetButtonLay]}
+                    disabled={submittingBetId !== null}
+                    onPress={() => onPlaceBet(option, 'lay')}
+                  >
+                    <ButtonBurst active={celebratingBetId === layBetId} />
+                    <Text style={styles.marketBoardActionText}>{laySubmitting ? 'Placing' : 'Lay'}</Text>
+                  </Pressable>
+                </View>
+              </View>
+            );
+          })}
+        </View>
+      ))}
+      </View>
+    </ScrollView>
   );
 }
 

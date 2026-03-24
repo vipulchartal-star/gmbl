@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, SafeAreaView, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import { AccountCard, BetSlipsPanel, BetSwiper, ScreenHeader, SwipeIndicator, WarningCard } from './src/appComponents';
+import { AccountCard, BetSlipsPanel, BetSwiper, MarketBoard, ScreenHeader, SwipeIndicator, ViewModeToggle, WarningCard } from './src/appComponents';
 import { PitchDeckScreen } from './src/pitchDeckScreen';
 import { styles } from './src/appStyles';
 import {
@@ -16,6 +16,7 @@ import {
   type BetOption,
   type BetResponse,
   type BetSlip,
+  type ExternalOddsResponse,
   type MarketsResponse,
   type MeResponse,
   type Market,
@@ -73,8 +74,11 @@ function MainApp() {
   const [betAmount, setBetAmount] = useState('10');
   const [submittingBetId, setSubmittingBetId] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
+  const [marketView, setMarketView] = useState<'swipe' | 'board'>('swipe');
   const [session, setSession] = useState<SessionState | null>(null);
   const [markets, setMarkets] = useState<Market[]>([]);
+  const [externalOddsLoading, setExternalOddsLoading] = useState(true);
+  const [externalOdds, setExternalOdds] = useState<ExternalOddsResponse | null>(null);
   const [betSlips, setBetSlips] = useState<BetSlip[]>([]);
   const [betSlipsOpen, setBetSlipsOpen] = useState(false);
   const [celebratingBetId, setCelebratingBetId] = useState<string | null>(null);
@@ -162,6 +166,33 @@ function MainApp() {
       setCurrentIndex(Math.max(0, betCards.length - 1));
     }
   }, [betCards.length, currentIndex]);
+
+  useEffect(() => {
+    let isMounted = true;
+
+    const loadExternalOdds = async () => {
+      try {
+        const response = await apiRequest<ExternalOddsResponse>('/external-odds?sport=cricket_ipl&regions=uk&markets=h2h,spreads,totals,outrights');
+        if (isMounted) {
+          setExternalOdds(response);
+        }
+      } catch (error) {
+        if (isMounted) {
+          setErrorText((current) => current ?? (error instanceof Error ? error.message : 'Failed to load external odds.'));
+        }
+      } finally {
+        if (isMounted) {
+          setExternalOddsLoading(false);
+        }
+      }
+    };
+
+    loadExternalOdds();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -396,7 +427,8 @@ function MainApp() {
               betSlipsOpen={betSlipsOpen}
               balanceAlertTick={balanceAlertTick}
             />
-            <SwipeIndicator currentIndex={currentIndex} total={betCards.length} />
+            <ViewModeToggle view={marketView} onChangeView={setMarketView} />
+            {marketView === 'swipe' ? <SwipeIndicator currentIndex={currentIndex} total={betCards.length} /> : null}
           </View>
           {betSlipsOpen ? <BetSlipsPanel slips={betSlips} markets={markets} loading={betSlipsLoading} /> : null}
           {marketsLoading ? (
@@ -404,17 +436,30 @@ function MainApp() {
               <ActivityIndicator size="small" color="#f97316" />
             </View>
           ) : betCards.length ? (
-            <BetSwiper
-              bets={betCards}
-              betAmount={betAmount}
-              cardHeight={cardHeight}
-              currentIndex={currentIndex}
-              celebratingBetId={celebratingBetId}
-              onChangeBetAmount={setBetAmount}
-              onIndexChange={setCurrentIndex}
-              onPlaceBet={placeBet}
-              submittingBetId={submittingBetId}
-            />
+            marketView === 'swipe' ? (
+              <BetSwiper
+                bets={betCards}
+                betAmount={betAmount}
+                cardHeight={cardHeight}
+                currentIndex={currentIndex}
+                celebratingBetId={celebratingBetId}
+                onChangeBetAmount={setBetAmount}
+                onIndexChange={setCurrentIndex}
+                onPlaceBet={placeBet}
+                submittingBetId={submittingBetId}
+              />
+            ) : (
+              <MarketBoard
+                bets={betCards}
+                betAmount={betAmount}
+                celebratingBetId={celebratingBetId}
+                externalOdds={externalOdds}
+                externalOddsLoading={externalOddsLoading}
+                onChangeBetAmount={setBetAmount}
+                onPlaceBet={placeBet}
+                submittingBetId={submittingBetId}
+              />
+            )
           ) : (
             <View style={styles.warningCard}>
               <Text style={styles.warningTitle}>No Markets</Text>

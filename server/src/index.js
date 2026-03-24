@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { issueToken, requireAuth } from './auth.js';
 import { config } from './config.js';
 import { ensureSchema, pool, withTransaction } from './db.js';
+import { fetchExternalOdds } from './externalOdds.js';
 import { ensureConfiguredMarkets, ensureMarketBySlug, findMarketDefinition, oddsForSide, sanitizeMarket } from './market.js';
 import { hashPassword, verifyPassword } from './password.js';
 
@@ -70,6 +71,29 @@ app.get('/admin', (_req, res) => {
 app.get('/health', async (_req, res) => {
   const db = await pool.query('select now() as now');
   res.json({ ok: true, dbTime: db.rows[0].now });
+});
+
+
+app.get('/external-odds', async (req, res) => {
+  try {
+    const payload = await fetchExternalOdds(config, req.query);
+    res.json(payload);
+  } catch (error) {
+    if (error instanceof Error && error.message === 'ODDS_API_NOT_CONFIGURED') {
+      res.status(503).json({ error: 'External odds API is not configured.' });
+      return;
+    }
+
+    if (error instanceof Error && error.message === 'ODDS_API_REQUEST_FAILED') {
+      res.status(error.status ?? 502).json({
+        error: 'Failed to fetch external odds.',
+        providerPayload: error.payload ?? null,
+      });
+      return;
+    }
+
+    res.status(500).json({ error: 'Unexpected external odds error.' });
+  }
 });
 
 app.get('/markets', async (_req, res) => {
