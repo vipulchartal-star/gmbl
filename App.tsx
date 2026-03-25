@@ -172,7 +172,7 @@ function MainApp() {
 
     const loadExternalOdds = async () => {
       try {
-        const response = await apiRequest<ExternalOddsResponse>('/external-odds?sport=cricket_ipl&regions=uk&markets=h2h,spreads,totals,outrights');
+        const response = await apiRequest<ExternalOddsResponse>('/odds/matches?sport=cricket_ipl&regions=uk&markets=h2h,spreads,totals,outrights');
         if (isMounted) {
           setExternalOdds(response);
         }

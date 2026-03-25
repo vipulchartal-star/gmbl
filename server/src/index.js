@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { issueToken, requireAuth } from './auth.js';
 import { config } from './config.js';
 import { ensureSchema, pool, withTransaction } from './db.js';
-import { fetchExternalOdds } from './externalOdds.js';
+import { fetchExternalOdds, fetchExternalSports } from './externalOdds.js';
 import { ensureConfiguredMarkets, ensureMarketBySlug, findMarketDefinition, oddsForSide, sanitizeMarket } from './market.js';
 import { hashPassword, verifyPassword } from './password.js';
 
@@ -74,25 +74,47 @@ app.get('/health', async (_req, res) => {
 });
 
 
+const sendExternalOddsError = (res, error) => {
+  if (error instanceof Error && error.message === 'ODDS_API_NOT_CONFIGURED') {
+    res.status(503).json({ error: 'External odds API is not configured.' });
+    return;
+  }
+
+  if (error instanceof Error && error.message === 'ODDS_API_REQUEST_FAILED') {
+    res.status(error.status ?? 502).json({
+      error: 'Failed to fetch external odds.',
+      providerPayload: error.payload ?? null,
+    });
+    return;
+  }
+
+  res.status(500).json({ error: 'Unexpected external odds error.' });
+};
+
+app.get('/odds/sports', async (_req, res) => {
+  try {
+    const payload = await fetchExternalSports(config);
+    res.json(payload);
+  } catch (error) {
+    sendExternalOddsError(res, error);
+  }
+});
+
+app.get('/odds/matches', async (req, res) => {
+  try {
+    const payload = await fetchExternalOdds(config, req.query);
+    res.json(payload);
+  } catch (error) {
+    sendExternalOddsError(res, error);
+  }
+});
+
 app.get('/external-odds', async (req, res) => {
   try {
     const payload = await fetchExternalOdds(config, req.query);
     res.json(payload);
   } catch (error) {
-    if (error instanceof Error && error.message === 'ODDS_API_NOT_CONFIGURED') {
-      res.status(503).json({ error: 'External odds API is not configured.' });
-      return;
-    }
-
-    if (error instanceof Error && error.message === 'ODDS_API_REQUEST_FAILED') {
-      res.status(error.status ?? 502).json({
-        error: 'Failed to fetch external odds.',
-        providerPayload: error.payload ?? null,
-      });
-      return;
-    }
-
-    res.status(500).json({ error: 'Unexpected external odds error.' });
+    sendExternalOddsError(res, error);
   }
 });
 

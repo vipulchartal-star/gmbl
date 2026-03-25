@@ -131,6 +131,11 @@ export type ExternalOddsEvent = {
   bookmakers: ExternalOddsBookmaker[];
 };
 
+export type ExternalOddsUsage = {
+  remainingRequests: number;
+  usedRequests: number;
+};
+
 export type ExternalOddsResponse = {
   sport: string;
   regions: string | null;
@@ -139,6 +144,20 @@ export type ExternalOddsResponse = {
   oddsFormat: string | null;
   dateFormat: string | null;
   events: ExternalOddsEvent[];
+  usage: ExternalOddsUsage;
+};
+
+export type ExternalSport = {
+  key: string;
+  group: string;
+  title: string;
+  description: string;
+  active: boolean;
+  hasOutrights: boolean;
+};
+
+export type ExternalSportsResponse = {
+  sports: ExternalSport[];
 };
 
 export const chipAmounts = [10, 25, 50, 100];

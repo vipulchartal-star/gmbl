@@ -16,12 +16,16 @@ Node + Postgres backend for the betting app.
 3. Run `server/sql/schema.sql` against that database.
 4. Install dependencies with `npm install` inside `server`.
 5. Set `ADMIN_SECRET` if you want the admin panel enabled.
-6. Start with `npm start`.
+6. Set `ODDS_API_KEY` if you want external sports and odds in the app.
+7. Start with `npm start`.
 
 ## API
 
 - `GET /health`
 - `GET /market`
+- `GET /odds/sports`
+- `GET /odds/matches?sport=cricket_ipl&regions=uk&markets=h2h,spreads,totals`
+- `GET /external-odds` legacy alias for `/odds/matches`
 - `GET /market/stream` for Server-Sent Events
 - `POST /auth/signup`
 - `POST /auth/login`
