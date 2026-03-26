@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Animated, Easing, Platform, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import { memo, useEffect, useRef, useState } from 'react';
+import { ActivityIndicator, Alert, Animated, Easing, FlatList, Image, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from 'react-native';
 
 import { styles } from './appStyles';
 import { chipAmounts, type AuthMode, type BetCard, type BetChoiceKey, type BetOption, type BetSlip, type ExternalOddsResponse, type Market, type SessionState } from './appTypes';
@@ -22,6 +22,125 @@ export function ScreenHeader({ authMode, session }: HeaderProps) {
             : 'Enter your login id and password. After login you can swipe through markets and place bets instantly.'}
       </Text>
     </>
+  );
+}
+
+
+type AuthHeroCardProps = {
+  authBusy: boolean;
+  authMode: AuthMode;
+  loginId: string;
+  onChangeLoginId: (value: string) => void;
+  onChangePassword: (value: string) => void;
+  onGenerateCredentials: () => void;
+  onLoginMode: () => void;
+  onSignupMode: () => void;
+  onSubmit: () => void;
+  onUploadLoginFile: () => void;
+  password: string;
+  sessionLoading: boolean;
+};
+
+export function AuthHeroCard({
+  authBusy,
+  authMode,
+  loginId,
+  onChangeLoginId,
+  onChangePassword,
+  onGenerateCredentials,
+  onLoginMode,
+  onSignupMode,
+  onSubmit,
+  onUploadLoginFile,
+  password,
+  sessionLoading,
+}: AuthHeroCardProps) {
+  const isSignup = authMode === 'signup';
+
+  return (
+    <View style={styles.heroShell}>
+      <View style={styles.heroGlowPrimary} />
+      <View style={styles.heroGlowSecondary} />
+      <View style={styles.heroCard}>
+        <View style={styles.heroBadgeRow}>
+          <Text style={styles.heroBadge}>Live cricket exchange</Text>
+          <Text style={styles.heroBadgeMuted}>{isSignup ? 'New account' : 'Member login'}</Text>
+        </View>
+        <View style={styles.heroCopyBlock}>
+          <Text style={styles.heroTitle}>One sharp card. No clutter.</Text>
+          <Text style={styles.heroSubtitle}>
+            {isSignup
+              ? 'Create your GMBL account and land straight into the market board.'
+              : 'Sign in and get directly to the active ball-by-ball betting flow.'}
+          </Text>
+        </View>
+        <View style={styles.heroStatRow}>
+          <View style={styles.heroStatChip}>
+            <Text style={styles.heroStatValue}>IPL</Text>
+            <Text style={styles.heroStatLabel}>Match focus</Text>
+          </View>
+          <View style={styles.heroStatChip}>
+            <Text style={styles.heroStatValue}>2-way</Text>
+            <Text style={styles.heroStatLabel}>Back or lay</Text>
+          </View>
+          <View style={styles.heroStatChip}>
+            <Text style={styles.heroStatValue}>Fast</Text>
+            <Text style={styles.heroStatLabel}>Instant entry</Text>
+          </View>
+        </View>
+        <View style={styles.heroFormCard}>
+          {sessionLoading ? (
+            <View style={styles.loadingWrap}>
+              <ActivityIndicator size="small" color="#ffd166" />
+            </View>
+          ) : (
+            <>
+              <Text style={styles.heroFormTitle}>{isSignup ? 'Create account' : 'Enter account'}</Text>
+              <TextInput
+                autoCapitalize="none"
+                value={loginId}
+                onChangeText={onChangeLoginId}
+                placeholder="login id"
+                placeholderTextColor="#7c8aa5"
+                style={styles.heroInput}
+              />
+              <TextInput
+                secureTextEntry
+                value={password}
+                onChangeText={onChangePassword}
+                placeholder="password"
+                placeholderTextColor="#7c8aa5"
+                style={styles.heroInput}
+              />
+              <Pressable style={styles.heroPrimaryButton} disabled={authBusy} onPress={onSubmit}>
+                <Text style={styles.heroPrimaryButtonText}>{authBusy ? 'Working...' : isSignup ? 'Create account' : 'Login now'}</Text>
+              </Pressable>
+              <View style={styles.heroLinkRow}>
+                {isSignup ? (
+                  <>
+                    <Pressable onPress={onGenerateCredentials}>
+                      <Text style={styles.heroTextLink}>Generate credentials</Text>
+                    </Pressable>
+                    <Pressable onPress={onLoginMode}>
+                      <Text style={styles.heroTextLink}>Back to login</Text>
+                    </Pressable>
+                  </>
+                ) : (
+                  <>
+                    <Pressable onPress={onUploadLoginFile}>
+                      <Text style={styles.heroTextLink}>Use credential file</Text>
+                    </Pressable>
+                    <Pressable onPress={onSignupMode}>
+                      <Text style={styles.heroTextLink}>Create account</Text>
+                    </Pressable>
+                  </>
+                )}
+              </View>
+            </>
+          )}
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -183,6 +302,183 @@ const showHelpDialog = (title: string, message: string) => {
   Alert.alert(title, message);
 };
 
+
+const teamDomainMap: Record<string, string> = {
+  mi: 'mumbaiindians.com',
+  'mumbai indians': 'mumbaiindians.com',
+  kkr: 'kkr.in',
+  'kolkata knight riders': 'kkr.in',
+  csk: 'chennaisuperkings.com',
+  'chennai super kings': 'chennaisuperkings.com',
+  rcb: 'royalchallengers.com',
+  'royal challengers bengaluru': 'royalchallengers.com',
+  'royal challengers bangalore': 'royalchallengers.com',
+  dc: 'delhicapitals.in',
+  'delhi capitals': 'delhicapitals.in',
+  'delhi daredevils': 'delhicapitals.in',
+  rr: 'rajasthanroyals.com',
+  'rajasthan royals': 'rajasthanroyals.com',
+  pbks: 'punjabkingsipl.in',
+  'punjab kings': 'punjabkingsipl.in',
+  'kings xi punjab': 'punjabkingsipl.in',
+  srh: 'sunrisershyderabad.in',
+  'sunrisers hyderabad': 'sunrisershyderabad.in',
+  lsg: 'lucknowsupergiants.in',
+  'lucknow super giants': 'lucknowsupergiants.in',
+  gt: 'gujarattitansipl.com',
+  'gujarat titans': 'gujarattitansipl.com',
+};
+
+const normalizeTeamKey = (value: string) => value.toLowerCase().replace(/[^a-z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+
+const getTeamLogoUri = (teamName: string) => {
+  const domain = teamDomainMap[normalizeTeamKey(teamName)];
+  return domain ? 'https://www.google.com/s2/favicons?sz=128&domain_url=' + encodeURIComponent('https://' + domain) : null;
+};
+
+const parseMatchTeams = (match: string) => {
+  const parts = match.split(/\s+vs\s+/i).map((part) => part.trim()).filter(Boolean);
+  return parts.slice(0, 2);
+};
+
+function TeamLogoStack({ teams, compact = false }: { teams: string[]; compact?: boolean }) {
+  const uniqueTeams = teams.filter((team, index) => team && teams.indexOf(team) === index).slice(0, 2);
+
+  return (
+    <View style={[styles.teamLogoStack, compact ? styles.teamLogoStackCompact : null]}>
+      {uniqueTeams.map((team) => {
+        const uri = getTeamLogoUri(team);
+        return uri ? (
+          <Image
+            key={team}
+            source={{ uri }}
+            style={[styles.teamLogoImage, compact ? styles.teamLogoImageCompact : null]}
+          />
+        ) : (
+          <View key={team} style={[styles.teamLogoFallback, compact ? styles.teamLogoImageCompact : null]}>
+            <Text style={styles.teamLogoFallbackText}>{team.slice(0, 2).toUpperCase()}</Text>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+type BetSlideCardProps = {
+  bet: BetCard;
+  betAmount: string;
+  cardHeight: number;
+  celebratingBetId: string | null;
+  index: number;
+  onChangeBetAmount: (value: string) => void;
+  onPlaceBet: (option: BetOption, choiceKey: BetChoiceKey) => void;
+  submittingBetId: string | null;
+  total: number;
+};
+
+const BetSlideCard = memo(function BetSlideCard({
+  bet,
+  betAmount,
+  cardHeight,
+  celebratingBetId,
+  index,
+  onChangeBetAmount,
+  onPlaceBet,
+  submittingBetId,
+  total,
+}: BetSlideCardProps) {
+  const amountValue = Number(betAmount);
+  const stake = Number.isFinite(amountValue) && amountValue > 0 ? amountValue : 0;
+  const helpText = bet.options
+    .map((option) => [option.optionLabel, option.back.meaning, option.back.winText].join(String.fromCharCode(10)))
+    .join(String.fromCharCode(10) + String.fromCharCode(10));
+
+  return (
+    <View style={[styles.betSlide, { minHeight: cardHeight }]}>
+      <View style={[styles.betSlideInner, styles.betSlideDual]}>
+        <View style={styles.betHeroTop}>
+          <Text style={styles.betHeroIndex}>{index + 1} / {total}</Text>
+          <Text style={styles.betHeroMarket}>{bet.market}</Text>
+        </View>
+        <View style={styles.betHeroBodyCompact}>
+          <Text style={styles.betHeroMatch}>{bet.match}</Text>
+          <Text style={styles.betHeroTitleCompact}>{bet.title}</Text>
+          <Text style={styles.betHeroHintFull}>{bet.subtitle}</Text>
+        </View>
+        <View style={styles.betActionPanel}>
+          <View style={styles.betActionHeader}>
+            <Text style={styles.betActionTitle}>Stake</Text>
+            <Pressable style={styles.helpButton} onPress={() => showHelpDialog(bet.title, helpText)}>
+              <Text style={styles.helpButtonText}>?</Text>
+            </Pressable>
+          </View>
+          <TextInput
+            keyboardType="numeric"
+            value={betAmount}
+            onChangeText={onChangeBetAmount}
+            placeholder="10"
+            placeholderTextColor="#94a3b8"
+            style={styles.betAmountInput}
+          />
+          <View style={styles.chipRow}>
+            {chipAmounts.map((amount) => (
+              <Pressable key={amount} style={styles.chip} onPress={() => onChangeBetAmount(String(amount))}>
+                <Text style={styles.chipText}>{amount}</Text>
+              </Pressable>
+            ))}
+          </View>
+          <Text style={styles.settlementNote}>Each row below is one possible outcome for this ball. Choose the outcome, then Back or Lay it.</Text>
+          <ScrollView style={styles.ballOptionList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
+            {bet.options.map((option) => {
+              const backBetId = option.id + ':back';
+              const layBetId = option.id + ':lay';
+              const backSubmitting = submittingBetId === backBetId;
+              const laySubmitting = submittingBetId === layBetId;
+              const backReturn = stake * option.back.odds;
+              const layReturn = stake * option.lay.odds;
+
+              return (
+                <View key={option.id} style={styles.ballOptionCard}>
+                  <View style={styles.ballOptionHeader}>
+                    <View style={styles.ballOptionLabelWrap}>
+                      <Text style={styles.ballOptionLabel}>{option.optionLabel}</Text>
+                      <Text style={styles.ballOptionMeta}>{option.outcomeLabel}</Text>
+                    </View>
+                  </View>
+                  <View style={styles.ballOptionButtonRow}>
+                    <Pressable
+                      style={[styles.ballOptionButton, styles.actionBetButtonBack]}
+                      disabled={submittingBetId !== null}
+                      onPress={() => onPlaceBet(option, 'back')}
+                    >
+                      <ButtonBurst active={celebratingBetId === backBetId} />
+                      <Text style={styles.ballOptionButtonSide}>BACK</Text>
+                      <Text style={styles.ballOptionButtonOdds}>{option.back.odds.toFixed(2)}x</Text>
+                      <Text style={styles.ballOptionButtonCta}>{backSubmitting ? 'Placing...' : 'Bet ' + option.optionLabel}</Text>
+                      <Text style={styles.ballOptionButtonMeta}>Return {backReturn.toFixed(2)} • Profit {(backReturn - stake).toFixed(2)}</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.ballOptionButton, styles.actionBetButtonLay]}
+                      disabled={submittingBetId !== null}
+                      onPress={() => onPlaceBet(option, 'lay')}
+                    >
+                      <ButtonBurst active={celebratingBetId === layBetId} />
+                      <Text style={styles.ballOptionButtonSide}>LAY</Text>
+                      <Text style={styles.ballOptionButtonOdds}>{option.lay.odds.toFixed(2)}x</Text>
+                      <Text style={styles.ballOptionButtonCta}>{laySubmitting ? 'Placing...' : 'Bet Against'}</Text>
+                      <Text style={styles.ballOptionButtonMeta}>Return {layReturn.toFixed(2)} • Profit {(layReturn - stake).toFixed(2)}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })}
+          </ScrollView>
+        </View>
+      </View>
+    </View>
+  );
+});
+
 export function BetSwiper({
   bets,
   betAmount,
@@ -194,117 +490,44 @@ export function BetSwiper({
   onPlaceBet,
   submittingBetId,
 }: BetSwiperProps) {
-  const scrollRef = useRef<ScrollView | null>(null);
+  const listRef = useRef<FlatList<BetCard> | null>(null);
 
   useEffect(() => {
-    scrollRef.current?.scrollTo({ y: currentIndex * cardHeight, animated: true });
-  }, [cardHeight, currentIndex, bets]);
+    listRef.current?.scrollToOffset({ offset: currentIndex * cardHeight, animated: true });
+  }, [cardHeight, currentIndex]);
 
   return (
-    <ScrollView
-      ref={scrollRef}
+    <FlatList
+      ref={listRef}
+      data={bets}
       style={styles.swiper}
       contentContainerStyle={styles.swiperContent}
       pagingEnabled
       showsVerticalScrollIndicator={false}
+      removeClippedSubviews
+      initialNumToRender={2}
+      maxToRenderPerBatch={2}
+      windowSize={3}
+      keyExtractor={(item) => item.id}
+      getItemLayout={(_, index) => ({ length: cardHeight, offset: cardHeight * index, index })}
       onMomentumScrollEnd={(event) => {
         const nextIndex = Math.round(event.nativeEvent.contentOffset.y / cardHeight);
         onIndexChange(Math.max(0, Math.min(nextIndex, bets.length - 1)));
       }}
-    >
-      {bets.map((bet, index) => {
-        const amountValue = Number(betAmount);
-        const stake = Number.isFinite(amountValue) && amountValue > 0 ? amountValue : 0;
-        const helpText = bet.options
-          .map((option) => [option.optionLabel, option.back.meaning, option.back.winText].join(String.fromCharCode(10)))
-          .join(String.fromCharCode(10) + String.fromCharCode(10));
-
-        return (
-          <View key={bet.id} style={[styles.betSlide, { minHeight: cardHeight }]}>
-            <View style={[styles.betSlideInner, styles.betSlideDual]}>
-              <View style={styles.betHeroTop}>
-                <Text style={styles.betHeroIndex}>{index + 1} / {bets.length}</Text>
-                <Text style={styles.betHeroMarket}>{bet.market}</Text>
-              </View>
-              <View style={styles.betHeroBodyCompact}>
-                <Text style={styles.betHeroMatch}>{bet.match}</Text>
-                <Text style={styles.betHeroTitleCompact}>{bet.title}</Text>
-                <Text style={styles.betHeroHintFull}>{bet.subtitle}</Text>
-              </View>
-              <View style={styles.betActionPanel}>
-                <View style={styles.betActionHeader}>
-                  <Text style={styles.betActionTitle}>Stake</Text>
-                  <Pressable style={styles.helpButton} onPress={() => showHelpDialog(bet.title, helpText)}>
-                    <Text style={styles.helpButtonText}>?</Text>
-                  </Pressable>
-                </View>
-                <TextInput
-                  keyboardType="numeric"
-                  value={betAmount}
-                  onChangeText={onChangeBetAmount}
-                  placeholder="10"
-                  placeholderTextColor="#94a3b8"
-                  style={styles.betAmountInput}
-                />
-                <View style={styles.chipRow}>
-                  {chipAmounts.map((amount) => (
-                    <Pressable key={amount} style={styles.chip} onPress={() => onChangeBetAmount(String(amount))}>
-                      <Text style={styles.chipText}>{amount}</Text>
-                    </Pressable>
-                  ))}
-                </View>
-                <Text style={styles.settlementNote}>Each row below is one possible outcome for this ball. Choose the outcome, then Back or Lay it.</Text>
-                <ScrollView style={styles.ballOptionList} nestedScrollEnabled showsVerticalScrollIndicator={false}>
-                  {bet.options.map((option) => {
-                    const backBetId = option.id + ':back';
-                    const layBetId = option.id + ':lay';
-                    const backSubmitting = submittingBetId === backBetId;
-                    const laySubmitting = submittingBetId === layBetId;
-                    const backReturn = stake * option.back.odds;
-                    const layReturn = stake * option.lay.odds;
-
-                    return (
-                      <View key={option.id} style={styles.ballOptionCard}>
-                        <View style={styles.ballOptionHeader}>
-                          <View style={styles.ballOptionLabelWrap}>
-                            <Text style={styles.ballOptionLabel}>{option.optionLabel}</Text>
-                            <Text style={styles.ballOptionMeta}>{option.outcomeLabel}</Text>
-                          </View>
-                        </View>
-                        <View style={styles.ballOptionButtonRow}>
-                          <Pressable
-                            style={[styles.ballOptionButton, styles.actionBetButtonBack]}
-                            disabled={submittingBetId !== null}
-                            onPress={() => onPlaceBet(option, 'back')}
-                          >
-                            <ButtonBurst active={celebratingBetId === backBetId} />
-                            <Text style={styles.ballOptionButtonSide}>BACK</Text>
-                            <Text style={styles.ballOptionButtonOdds}>{option.back.odds.toFixed(2)}x</Text>
-                            <Text style={styles.ballOptionButtonCta}>{backSubmitting ? 'Placing...' : 'Bet ' + option.optionLabel}</Text>
-                            <Text style={styles.ballOptionButtonMeta}>Return {backReturn.toFixed(2)} • Profit {(backReturn - stake).toFixed(2)}</Text>
-                          </Pressable>
-                          <Pressable
-                            style={[styles.ballOptionButton, styles.actionBetButtonLay]}
-                            disabled={submittingBetId !== null}
-                            onPress={() => onPlaceBet(option, 'lay')}
-                          >
-                            <ButtonBurst active={celebratingBetId === layBetId} />
-                            <Text style={styles.ballOptionButtonSide}>LAY</Text>
-                            <Text style={styles.ballOptionButtonOdds}>{option.lay.odds.toFixed(2)}x</Text>
-                            <Text style={styles.ballOptionButtonCta}>{laySubmitting ? 'Placing...' : 'Bet Against'}</Text>
-                            <Text style={styles.ballOptionButtonMeta}>Return {layReturn.toFixed(2)} • Profit {(layReturn - stake).toFixed(2)}</Text>
-                          </Pressable>
-                        </View>
-                      </View>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            </View>
-          </View>
-        );
-      })}
-    </ScrollView>
+      renderItem={({ item, index }) => (
+        <BetSlideCard
+          bet={item}
+          betAmount={betAmount}
+          cardHeight={cardHeight}
+          celebratingBetId={celebratingBetId}
+          index={index}
+          onChangeBetAmount={onChangeBetAmount}
+          onPlaceBet={onPlaceBet}
+          submittingBetId={submittingBetId}
+          total={bets.length}
+        />
+      )}
+    />
   );
 }
 
@@ -410,13 +633,18 @@ export function MarketBoard({
   onPlaceBet,
   submittingBetId,
 }: MarketBoardProps) {
+  const { width } = useWindowDimensions();
+  const isCompactBoard = width < 680;
   const amountValue = Number(betAmount);
   const stake = Number.isFinite(amountValue) && amountValue > 0 ? amountValue : 0;
 
   return (
     <ScrollView style={styles.marketBoard} contentContainerStyle={styles.marketBoardContent} showsVerticalScrollIndicator={false}>
-      <View style={styles.marketBoardToolbar}>
-        <Text style={styles.marketBoardTitle}>Odds Board</Text>
+      <View style={[styles.marketBoardToolbarDense, isCompactBoard ? styles.marketBoardToolbarDenseCompact : null]}>
+        <View style={styles.marketBoardToolbarCopy}>
+          <Text style={styles.marketBoardTitle}>Exchange Board</Text>
+          <Text style={styles.marketBoardToolbarMeta}>Compact ladder view with direct back and lay execution.</Text>
+        </View>
         <TextInput
           keyboardType="numeric"
           value={betAmount}
@@ -433,6 +661,73 @@ export function MarketBoard({
           </Pressable>
         ))}
       </View>
+      <View style={[styles.marketBoardSummaryBar, isCompactBoard ? styles.marketBoardSummaryBarCompact : null]}>
+        <Text style={styles.marketBoardSummaryText}>Stake {stake.toFixed(2)}</Text>
+        <Text style={styles.marketBoardSummaryText}>Markets {bets.length}</Text>
+      </View>
+      <ScrollView horizontal={!isCompactBoard} showsHorizontalScrollIndicator={false} contentContainerStyle={styles.marketBoardTableScrollContent}>
+        <View style={[styles.marketBoardTable, isCompactBoard ? styles.marketBoardTableCompact : null]}>
+          {isCompactBoard ? null : (
+            <View style={styles.marketBoardHeaderRow}>
+              <Text style={[styles.marketBoardHeaderCell, styles.marketBoardHeaderSelection]}>Selection</Text>
+              <Text style={[styles.marketBoardHeaderCell, styles.marketBoardHeaderPrice]}>Back</Text>
+              <Text style={[styles.marketBoardHeaderCell, styles.marketBoardHeaderPrice]}>Lay</Text>
+              <Text style={[styles.marketBoardHeaderCell, styles.marketBoardHeaderAction]}>Action</Text>
+            </View>
+          )}
+          {bets.map((bet) => (
+            <View key={bet.id} style={styles.marketBoardGroup}>
+              <View style={[styles.marketBoardGroupBar, isCompactBoard ? styles.marketBoardGroupBarCompact : null]}>
+                <TeamLogoStack teams={parseMatchTeams(bet.match)} compact={isCompactBoard} />
+                <View style={styles.marketBoardGroupCopy}>
+                  <Text style={styles.marketBoardGroupEyebrow}>{bet.market}</Text>
+                  <Text style={styles.marketBoardGroupTitle}>{bet.title}</Text>
+                </View>
+                <Text style={[styles.marketBoardGroupMatch, isCompactBoard ? styles.marketBoardGroupMatchCompact : null]}>{bet.match}</Text>
+              </View>
+              {bet.options.map((option) => {
+                const backBetId = option.id + ':back';
+                const layBetId = option.id + ':lay';
+                const backSubmitting = submittingBetId === backBetId;
+                const laySubmitting = submittingBetId === layBetId;
+                const backReturn = stake * option.back.odds;
+                const layReturn = stake * option.lay.odds;
+
+                return (
+                  <View key={option.id} style={[styles.marketBoardGridRow, isCompactBoard ? styles.marketBoardGridRowCompact : null]}>
+                    <View style={[styles.marketBoardSelectionCell, isCompactBoard ? styles.marketBoardSelectionCellCompact : null]}>
+                      <Text style={styles.marketBoardSelectionLabel}>{option.optionLabel}</Text>
+                      <Text style={styles.marketBoardSelectionMeta}>{option.outcomeLabel}</Text>
+                    </View>
+                    <Pressable
+                      style={[styles.marketBoardPriceCell, styles.marketBoardBackCell, isCompactBoard ? styles.marketBoardPriceCellCompact : null]}
+                      disabled={submittingBetId !== null}
+                      onPress={() => onPlaceBet(option, 'back')}
+                    >
+                      <ButtonBurst active={celebratingBetId === backBetId} />
+                      <Text style={styles.marketBoardPriceOdds}>{option.back.odds.toFixed(2)}</Text>
+                      <Text style={styles.marketBoardPriceSub}>{backReturn.toFixed(2)} rtn</Text>
+                    </Pressable>
+                    <Pressable
+                      style={[styles.marketBoardPriceCell, styles.marketBoardLayCell, isCompactBoard ? styles.marketBoardPriceCellCompact : null]}
+                      disabled={submittingBetId !== null}
+                      onPress={() => onPlaceBet(option, 'lay')}
+                    >
+                      <ButtonBurst active={celebratingBetId === layBetId} />
+                      <Text style={styles.marketBoardPriceOdds}>{option.lay.odds.toFixed(2)}</Text>
+                      <Text style={styles.marketBoardPriceSub}>{layReturn.toFixed(2)} rtn</Text>
+                    </Pressable>
+                    <View style={[styles.marketBoardExecCell, isCompactBoard ? styles.marketBoardExecCellCompact : null]}>
+                      <Text style={styles.marketBoardExecTop}>{backSubmitting ? 'Placing Back' : laySubmitting ? 'Placing Lay' : 'Tap price to bet'}</Text>
+                      <Text style={styles.marketBoardExecBottom}>Stake {stake.toFixed(2)}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ))}
+        </View>
+      </ScrollView>
       <View style={styles.marketBoardSection}>
         <Text style={styles.marketBoardSectionTitle}>External Cricket Odds</Text>
         {externalOddsLoading ? (
@@ -442,7 +737,10 @@ export function MarketBoard({
         ) : externalOdds?.events.length ? (
           externalOdds.events.map((event) => (
             <View key={event.id} style={styles.marketBoardExternalCard}>
-              <Text style={styles.marketBoardExternalTitle}>{event.homeTeam} vs {event.awayTeam}</Text>
+              <View style={styles.marketBoardExternalTitleRow}>
+                <TeamLogoStack teams={[event.homeTeam, event.awayTeam]} compact />
+                <Text style={styles.marketBoardExternalTitle}>{event.homeTeam} vs {event.awayTeam}</Text>
+              </View>
               <Text style={styles.marketBoardExternalMeta}>{new Date(event.commenceTime).toLocaleString()} • {event.sportTitle}</Text>
               {event.bookmakers.map((bookmaker) => (
                 <View key={bookmaker.key} style={styles.marketBoardExternalBookmaker}>
@@ -465,66 +763,6 @@ export function MarketBoard({
         ) : (
           <Text style={styles.betSlipsEmpty}>No external odds returned from The Odds API.</Text>
         )}
-      </View>
-      <View style={styles.marketBoardSection}>
-        <Text style={styles.marketBoardSectionTitle}>Internal Bet Markets</Text>
-      {bets.map((bet) => (
-        <View key={bet.id} style={styles.marketBoardCard}>
-          <View style={styles.marketBoardCardHeader}>
-            <View style={styles.marketBoardCardCopy}>
-              <Text style={styles.marketBoardCardEyebrow}>{bet.market}</Text>
-              <Text style={styles.marketBoardCardTitle}>{bet.title}</Text>
-              <Text style={styles.marketBoardCardSubtitle}>{bet.subtitle}</Text>
-            </View>
-            <Text style={styles.marketBoardCardMatch}>{bet.match}</Text>
-          </View>
-          {bet.options.map((option) => {
-            const backBetId = option.id + ':back';
-            const layBetId = option.id + ':lay';
-            const backSubmitting = submittingBetId === backBetId;
-            const laySubmitting = submittingBetId === layBetId;
-            const backReturn = stake * option.back.odds;
-            const layReturn = stake * option.lay.odds;
-
-            return (
-              <View key={option.id} style={styles.marketBoardRow}>
-                <View style={styles.marketBoardOptionCopy}>
-                  <Text style={styles.marketBoardOptionLabel}>{option.optionLabel}</Text>
-                  <Text style={styles.marketBoardOptionMeta}>{option.outcomeLabel}</Text>
-                </View>
-                <View style={styles.marketBoardOddsCell}>
-                  <Text style={styles.marketBoardOddsLabel}>BACK</Text>
-                  <Text style={styles.marketBoardOddsValue}>{option.back.odds.toFixed(2)}x</Text>
-                  <Text style={styles.marketBoardOddsMeta}>{backReturn.toFixed(2)} rtn</Text>
-                </View>
-                <View style={styles.marketBoardOddsCell}>
-                  <Text style={styles.marketBoardOddsLabel}>LAY</Text>
-                  <Text style={styles.marketBoardOddsValue}>{option.lay.odds.toFixed(2)}x</Text>
-                  <Text style={styles.marketBoardOddsMeta}>{layReturn.toFixed(2)} rtn</Text>
-                </View>
-                <View style={styles.marketBoardActionColumn}>
-                  <Pressable
-                    style={[styles.marketBoardActionButton, styles.actionBetButtonBack]}
-                    disabled={submittingBetId !== null}
-                    onPress={() => onPlaceBet(option, 'back')}
-                  >
-                    <ButtonBurst active={celebratingBetId === backBetId} />
-                    <Text style={styles.marketBoardActionText}>{backSubmitting ? 'Placing' : 'Back'}</Text>
-                  </Pressable>
-                  <Pressable
-                    style={[styles.marketBoardActionButton, styles.actionBetButtonLay]}
-                    disabled={submittingBetId !== null}
-                    onPress={() => onPlaceBet(option, 'lay')}
-                  >
-                    <ButtonBurst active={celebratingBetId === layBetId} />
-                    <Text style={styles.marketBoardActionText}>{laySubmitting ? 'Placing' : 'Lay'}</Text>
-                  </Pressable>
-                </View>
-              </View>
-            );
-          })}
-        </View>
-      ))}
       </View>
     </ScrollView>
   );

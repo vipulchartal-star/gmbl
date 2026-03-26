@@ -3,7 +3,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, SafeAreaView, ScrollView, Text, useWindowDimensions, View } from 'react-native';
 
-import { AccountCard, BetSlipsPanel, BetSwiper, MarketBoard, ScreenHeader, SwipeIndicator, ViewModeToggle, WarningCard } from './src/appComponents';
+import { AccountCard, AuthHeroCard, BetSlipsPanel, BetSwiper, MarketBoard, SwipeIndicator, ViewModeToggle, WarningCard } from './src/appComponents';
 import { PitchDeckScreen } from './src/pitchDeckScreen';
 import { styles } from './src/appStyles';
 import {
@@ -74,7 +74,7 @@ function MainApp() {
   const [betAmount, setBetAmount] = useState('10');
   const [submittingBetId, setSubmittingBetId] = useState<string | null>(null);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [marketView, setMarketView] = useState<'swipe' | 'board'>('swipe');
+  const [marketView, setMarketView] = useState<'swipe' | 'board'>('board');
   const [session, setSession] = useState<SessionState | null>(null);
   const [markets, setMarkets] = useState<Market[]>([]);
   const [externalOddsLoading, setExternalOddsLoading] = useState(true);
@@ -479,11 +479,10 @@ function MainApp() {
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={styles.scrollContent}
-        endFillColor="#08111f"
+        endFillColor="#07111d"
         alwaysBounceVertical={false}
       >
-        <ScreenHeader authMode={authMode} session={session} />
-        <AccountCard
+        <AuthHeroCard
           authBusy={authBusy}
           authMode={authMode}
           loginId={loginId}
@@ -491,12 +490,10 @@ function MainApp() {
           onChangePassword={setPassword}
           onGenerateCredentials={generateSignupCredentials}
           onLoginMode={() => setAuthMode('login')}
-          onLogout={logout}
           onSignupMode={() => setAuthMode('signup')}
           onSubmit={submitAuth}
           onUploadLoginFile={uploadLoginFile}
           password={password}
-          session={session}
           sessionLoading={sessionLoading}
         />
         {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
