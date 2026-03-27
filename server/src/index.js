@@ -7,6 +7,7 @@ import { config } from './config.js';
 import { ensureSchema, pool, withTransaction } from './db.js';
 import { fetchExternalOdds, fetchExternalSports } from './externalOdds.js';
 import { ensureConfiguredMarkets, ensureMarketBySlug, findMarketDefinition, oddsForSide, sanitizeMarket } from './market.js';
+import { createOrJoinMatch, leaveMatch, serializeActiveMatch, serializeMatchById } from './matchmaking.js';
 import { hashPassword, verifyPassword } from './password.js';
 
 const app = express();
@@ -262,6 +263,64 @@ app.post('/auth/login', async (req, res) => {
     logAuth('login_error', { loginId, error: error instanceof Error ? error.message : 'unknown' });
     res.status(500).json({ error: 'Login failed.' });
   }
+});
+
+app.post('/matchmaking/join', requireAuth, async (req, res) => {
+  const userResult = await pool.query(
+    'select id, login_id, username, balance, created_at from app_users where id = $1',
+    [req.auth.sub],
+  );
+  const user = userResult.rows[0];
+
+  if (!user) {
+    res.status(404).json({ error: 'User not found.' });
+    return;
+  }
+
+  const match = createOrJoinMatch({
+    user: {
+      id: user.id,
+      loginId: user.login_id,
+      username: user.username,
+    },
+    queue: String(req.body.queue ?? 'coyote-4p'),
+  });
+
+  res.status(201).json({ match: serializeMatchById(match.id) });
+});
+
+app.get('/matches/me', requireAuth, (req, res) => {
+  const match = serializeActiveMatch(req.auth.sub);
+
+  if (!match) {
+    res.status(404).json({ error: 'No active match.' });
+    return;
+  }
+
+  res.json({ match });
+});
+
+app.get('/matches/:matchId', requireAuth, (req, res) => {
+  const match = serializeMatchById(String(req.params.matchId ?? ''));
+
+  if (!match) {
+    res.status(404).json({ error: 'Match not found.' });
+    return;
+  }
+
+  res.json({ match });
+});
+
+app.post('/matches/:matchId/leave', requireAuth, (req, res) => {
+  const active = serializeActiveMatch(req.auth.sub);
+
+  if (!active || active.id !== req.params.matchId) {
+    res.status(404).json({ error: 'Match not found for user.' });
+    return;
+  }
+
+  leaveMatch(req.auth.sub);
+  res.json({ ok: true });
 });
 
 app.get('/me', requireAuth, async (req, res) => {

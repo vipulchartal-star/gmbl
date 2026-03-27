@@ -145,6 +145,7 @@ function Seat({
   hidden,
   angle,
   style,
+  activeText,
 }: {
   label: string;
   lives: number;
@@ -154,12 +155,14 @@ function Seat({
   hidden: boolean;
   angle: string;
   style: object;
+  activeText?: string | null;
 }) {
   return (
     <View style={style}>
       <Text style={styles.seatLabel}>{label}</Text>
       <LifeTrack count={lives} tone={tone} />
       <CardVisual label={cardLabel} value={cardValue} hidden={hidden} angle={angle} />
+      {activeText ? <Text style={styles.seatStatus}>{activeText}</Text> : null}
     </View>
   );
 }
@@ -284,7 +287,7 @@ export function TableCard({
   lastRaiser: RoundActor | null;
   turnProgress: number;
 }) {
-  const turnText = awardTo ? 'Pot moving' : turn === 'player' ? 'Your move' : turn.toUpperCase() + ' thinking';
+  const turnText = turn === 'player' ? 'Your move' : turn.toUpperCase() + ' thinking';
 
   return (
     <View style={styles.tableShell}>
@@ -293,14 +296,14 @@ export function TableCard({
         <View style={styles.tableRail} />
         <View style={styles.tableInnerRing} />
 
-        <Seat label="AI1" lives={score.ai1} tone="ai" cardLabel={cards.ai1.label} cardValue={cards.ai1.value} hidden={false} angle="-4deg" style={styles.aiTopSeat} />
-        <Seat label="AI2" lives={score.ai2} tone="ai" cardLabel={cards.ai2.label} cardValue={cards.ai2.value} hidden={false} angle="-9deg" style={styles.aiLeftSeat} />
-        <Seat label="AI3" lives={score.ai3} tone="ai" cardLabel={cards.ai3.label} cardValue={cards.ai3.value} hidden={false} angle="9deg" style={styles.aiRightSeat} />
-        <Seat label="YOU" lives={score.player} tone="player" cardLabel={cards.player.label} cardValue={cards.player.value} hidden={!revealPlayerCard} angle="6deg" style={styles.playerSeat} />
+        <Seat label="AI1" lives={score.ai1} tone="ai" cardLabel={cards.ai1.label} cardValue={cards.ai1.value} hidden={false} angle="-4deg" style={styles.aiTopSeat} activeText={!awardTo && turn === 'ai1' ? turnText : null} />
+        <Seat label="AI2" lives={score.ai2} tone="ai" cardLabel={cards.ai2.label} cardValue={cards.ai2.value} hidden={false} angle="-9deg" style={styles.aiLeftSeat} activeText={!awardTo && turn === 'ai2' ? turnText : null} />
+        <Seat label="AI3" lives={score.ai3} tone="ai" cardLabel={cards.ai3.label} cardValue={cards.ai3.value} hidden={false} angle="9deg" style={styles.aiRightSeat} activeText={!awardTo && turn === 'ai3' ? turnText : null} />
+        <Seat label="YOU" lives={score.player} tone="player" cardLabel={cards.player.label} cardValue={cards.player.value} hidden={!revealPlayerCard} angle="6deg" style={styles.playerSeat} activeText={!awardTo && turn === 'player' ? turnText : null} />
 
         {!awardTo ? <TurnTimer actor={turn} progress={turnProgress} /> : null}
         <BetTravel actor={lastRaiser} bid={currentBid} />
-        <PotStack bid={currentBid} awardTo={awardTo} statusText={awardTo ? statusText : turnText} />
+        <PotStack bid={currentBid} awardTo={awardTo} statusText={awardTo ? statusText : ''} />
       </View>
     </View>
   );

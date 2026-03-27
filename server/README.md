@@ -30,6 +30,10 @@ Node + Postgres backend for the betting app.
 - `POST /auth/signup`
 - `POST /auth/login`
 - `GET /me`
+- `POST /matchmaking/join`
+- `GET /matches/me`
+- `GET /matches/:matchId`
+- `POST /matches/:matchId/leave`
 - `POST /bets`
 - `GET /bets/me`
 - `GET /admin`
