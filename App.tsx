@@ -1,127 +1,192 @@
-import * as SecureStore from 'expo-secure-store';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useMemo, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, SafeAreaView, ScrollView, Text, useWindowDimensions, View } from 'react-native';
+import { SafeAreaView, View } from 'react-native';
 
-import { AccountCard, AuthHeroCard, BetSlipsPanel, BetSwiper, MarketBoard, SwipeIndicator, ViewModeToggle, WarningCard } from './src/appComponents';
-import { PitchDeckScreen } from './src/pitchDeckScreen';
+import { apiRequest, ApiError } from './src/api';
+import { ActionBar, AuthPanel, TableCard, TopHud } from './src/appComponents';
 import { styles } from './src/appStyles';
-import {
-  buildBetCards,
-  sessionKey,
-  type AuthMode,
-  type AuthResponse,
-  type BetCard,
-  type BetChoiceKey,
-  type BetOption,
-  type BetResponse,
-  type BetSlip,
-  type ExternalOddsResponse,
-  type MarketsResponse,
-  type MeResponse,
-  type Market,
-  type MyBetsResponse,
-  type SessionState,
-} from './src/appTypes';
-import { createGeneratedCredentials, downloadTextFile, parseCredentialText, readCredentialFile } from './src/credentials';
-import { apiConfig, ApiError, apiRequest } from './src/api';
+import { actorOrder, aiActors, coyoteDeck, startingLives, type CardMap, type RoundActor, type ScoreState } from './src/appTypes';
+import { createGeneratedCredentials } from './src/credentials';
+import { clearSessionToken, readSessionToken, writeSessionToken } from './src/sessionStore';
 
-const sessionStorage = {
-  getItem: async (key: string) => {
-    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-      return localStorage.getItem(key);
-    }
+type RoundState = {
+  cards: CardMap;
+  currentBid: number;
+  turn: RoundActor;
+  lastBidder: RoundActor;
+  lastRaiser: RoundActor | null;
+  statusText: string;
+  revealCards: boolean;
+  awardTo: RoundActor | null;
+};
 
-    return SecureStore.getItemAsync(key);
-  },
-  setItem: async (key: string, value: string) => {
-    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-      localStorage.setItem(key, value);
-      return;
-    }
+type AuthMode = 'login' | 'signup';
 
-    await SecureStore.setItemAsync(key, value);
-  },
-  removeItem: async (key: string) => {
-    if (Platform.OS === 'web' && typeof localStorage !== 'undefined') {
-      localStorage.removeItem(key);
-      return;
-    }
+type SessionUser = {
+  id: string;
+  loginId: string;
+  username: string;
+  balance: number;
+};
 
-    await SecureStore.deleteItemAsync(key);
-  },
+type AuthResponse = {
+  token: string;
+  user: SessionUser;
+};
+
+type MeResponse = {
+  user: SessionUser;
+};
+
+const averageUnknown = 4;
+const aiTurnDelayMs = 850;
+const initialScore: ScoreState = { ai1: startingLives, ai2: startingLives, ai3: startingLives, player: startingLives };
+
+const pickCards = (): CardMap => {
+  const deck = [...coyoteDeck];
+  const result = {} as CardMap;
+
+  for (const actor of actorOrder) {
+    const index = Math.floor(Math.random() * deck.length);
+    result[actor] = deck.splice(index, 1)[0];
+  }
+
+  return result;
+};
+
+const sumVisibleForActor = (cards: CardMap, actor: RoundActor) => actorOrder.reduce((total, current) => total + (current === actor ? 0 : cards[current].value), 0);
+const sumAllCards = (cards: CardMap) => actorOrder.reduce((total, actor) => total + cards[actor].value, 0);
+const nextActor = (actor: RoundActor) => actorOrder[(actorOrder.indexOf(actor) + 1) % actorOrder.length];
+const nextBidChoices = (currentBid: number) => Array.from({ length: 4 }, (_, index) => currentBid + index + 1);
+const allAiDefeated = (score: ScoreState) => aiActors.every((actor) => score[actor] <= 0);
+
+const openingBidForAi1 = (cards: CardMap) => {
+  const visibleTotal = sumVisibleForActor(cards, 'ai1');
+  return Math.max(0, visibleTotal - 2);
+};
+
+const createRound = (): RoundState => {
+  const cards = pickCards();
+
+  return {
+    cards,
+    currentBid: openingBidForAi1(cards),
+    turn: 'ai2',
+    lastBidder: 'ai1',
+    lastRaiser: 'ai1',
+    statusText: 'AI1 opens the round.',
+    revealCards: false,
+    awardTo: null,
+  };
+};
+
+const resolveRound = (current: RoundState, caller: RoundActor, bidder: RoundActor) => {
+  const total = sumAllCards(current.cards);
+  const bidWasTooHigh = current.currentBid > total;
+  const loser = bidWasTooHigh ? bidder : caller;
+  const winner = bidWasTooHigh ? caller : bidder;
+  const winnerText = winner === 'player' ? 'You take the pot.' : winner.toUpperCase() + ' takes the pot.';
+
+  return {
+    loser,
+    nextRound: {
+      ...current,
+      turn: 'player' as RoundActor,
+      statusText: winnerText + ' Total was ' + total + '.',
+      revealCards: true,
+      awardTo: winner,
+      lastRaiser: null,
+    },
+  };
+};
+
+const performAiTurn = (current: RoundState, score: ScoreState) => {
+  const actor = current.turn;
+  const visibleTotal = sumVisibleForActor(current.cards, actor);
+  const threshold = visibleTotal + averageUnknown + (current.cards[actor].value >= 7 ? 1 : 0);
+
+  if (current.currentBid >= threshold) {
+    const resolved = resolveRound(current, actor, current.lastBidder);
+    return {
+      nextScore: {
+        ...score,
+        [resolved.loser]: Math.max(0, score[resolved.loser] - 1),
+      },
+      nextRound: resolved.nextRound,
+    };
+  }
+
+  const raisedBid = Math.max(current.currentBid + 1, Math.min(current.currentBid + 2, threshold));
+
+  return {
+    nextScore: score,
+    nextRound: {
+      ...current,
+      currentBid: raisedBid,
+      lastBidder: actor,
+      lastRaiser: actor,
+      turn: nextActor(actor),
+      statusText: actor.toUpperCase() + ' raises to ' + raisedBid + '.',
+      awardTo: null,
+    },
+  };
+};
+
+const authErrorText = (error: unknown) => {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return 'Request failed.';
 };
 
 export default function App() {
-  const pathname = Platform.OS === 'web' && typeof globalThis.location !== 'undefined' ? globalThis.location.pathname : '/';
-
-  if (pathname === '/deck') {
-    return <PitchDeckScreen />;
-  }
-
-  return <MainApp />;
-}
-
-function MainApp() {
-  const { height } = useWindowDimensions();
-  const [sessionLoading, setSessionLoading] = useState(true);
-  const [marketsLoading, setMarketsLoading] = useState(true);
-  const [authBusy, setAuthBusy] = useState(false);
-  const [betSlipsLoading, setBetSlipsLoading] = useState(false);
+  const [score, setScore] = useState<ScoreState>(initialScore);
+  const [round, setRound] = useState<RoundState>(() => createRound());
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
-  const [betAmount, setBetAmount] = useState('10');
-  const [submittingBetId, setSubmittingBetId] = useState<string | null>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [marketView, setMarketView] = useState<'swipe' | 'board'>('board');
-  const [session, setSession] = useState<SessionState | null>(null);
-  const [markets, setMarkets] = useState<Market[]>([]);
-  const [externalOddsLoading, setExternalOddsLoading] = useState(true);
-  const [externalOdds, setExternalOdds] = useState<ExternalOddsResponse | null>(null);
-  const [betSlips, setBetSlips] = useState<BetSlip[]>([]);
-  const [betSlipsOpen, setBetSlipsOpen] = useState(false);
-  const [celebratingBetId, setCelebratingBetId] = useState<string | null>(null);
-  const [balanceAlertTick, setBalanceAlertTick] = useState(0);
-  const [errorText, setErrorText] = useState<string | null>(null);
-  const [authDebugText, setAuthDebugText] = useState<string | null>(null);
+  const [sessionToken, setSessionToken] = useState<string | null>(null);
+  const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authSubmitting, setAuthSubmitting] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
-  const cardHeight = Math.max(420, height - 126);
-  const betCards = useMemo(() => buildBetCards(markets), [markets]);
-
-  const persistSession = async (nextSession: SessionState | null) => {
-    setSession(nextSession);
-
-    if (nextSession) {
-      await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
-      return;
-    }
-
-    await sessionStorage.removeItem(sessionKey);
-  };
+  const gameOver = score.player <= 0 || allAiDefeated(score);
+  const showReveal = round.revealCards || gameOver;
+  const disabled = round.turn !== 'player' || showReveal;
+  const bidChoices = useMemo(() => nextBidChoices(round.currentBid), [round.currentBid]);
 
   useEffect(() => {
-    let isMounted = true;
+    let cancelled = false;
 
     const restoreSession = async () => {
       try {
-        const rawSession = await sessionStorage.getItem(sessionKey);
+        const savedToken = await readSessionToken();
 
-        if (!rawSession) {
+        if (!savedToken) {
           return;
         }
 
-        const parsed = JSON.parse(rawSession) as SessionState;
-        const response = await apiRequest<MeResponse>('/me', { token: parsed.token });
+        const payload = await apiRequest<MeResponse>('/me', { token: savedToken });
 
-        if (isMounted) {
-          setSession({ token: parsed.token, user: response.user });
+        if (!cancelled) {
+          setSessionToken(savedToken);
+          setSessionUser(payload.user);
         }
       } catch {
-        await sessionStorage.removeItem(sessionKey);
+        await clearSessionToken();
+        if (!cancelled) {
+          setSessionToken(null);
+          setSessionUser(null);
+        }
       } finally {
-        if (isMounted) {
-          setSessionLoading(false);
+        if (!cancelled) {
+          setAuthLoading(false);
         }
       }
     };
@@ -129,376 +194,144 @@ function MainApp() {
     restoreSession();
 
     return () => {
-      isMounted = false;
+      cancelled = true;
     };
   }, []);
 
   useEffect(() => {
-    let isMounted = true;
-
-    const loadMarkets = async () => {
-      try {
-        const response = await apiRequest<MarketsResponse>('/markets');
-        if (isMounted) {
-          setMarkets(response.markets);
-          setErrorText(null);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setErrorText(error instanceof Error ? error.message : 'Failed to load markets.');
-        }
-      } finally {
-        if (isMounted) {
-          setMarketsLoading(false);
-        }
-      }
-    };
-
-    loadMarkets();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    if (currentIndex > 0 && currentIndex >= betCards.length) {
-      setCurrentIndex(Math.max(0, betCards.length - 1));
-    }
-  }, [betCards.length, currentIndex]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadExternalOdds = async () => {
-      try {
-        const response = await apiRequest<ExternalOddsResponse>('/odds/matches?sport=cricket_ipl&regions=uk&markets=h2h,spreads,totals,outrights');
-        if (isMounted) {
-          setExternalOdds(response);
-        }
-      } catch (error) {
-        if (isMounted) {
-          setErrorText((current) => current ?? (error instanceof Error ? error.message : 'Failed to load external odds.'));
-        }
-      } finally {
-        if (isMounted) {
-          setExternalOddsLoading(false);
-        }
-      }
-    };
-
-    loadExternalOdds();
-
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const loadBetSlips = async () => {
-      if (!session) {
-        if (isMounted) {
-          setBetSlips([]);
-          setBetSlipsLoading(false);
-        }
-        return;
-      }
-
-      try {
-        if (isMounted) {
-          setBetSlipsLoading(true);
-        }
-
-        const response = await apiRequest<MyBetsResponse>('/bets/me', { token: session.token });
-
-        if (isMounted) {
-          setBetSlips(response.bets);
-        }
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 401) {
-          await persistSession(null);
-          return;
-        }
-
-        if (isMounted) {
-          setErrorText(error instanceof Error ? error.message : 'Failed to load your bet slips.');
-        }
-      } finally {
-        if (isMounted) {
-          setBetSlipsLoading(false);
-        }
-      }
-    };
-
-    loadBetSlips();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [session]);
-
-  const clearAuthForm = () => {
-    setPassword('');
-  };
-
-  const submitAuth = async () => {
-    if (authBusy) {
+    if (round.revealCards || gameOver || round.turn === 'player' || !sessionUser) {
       return;
     }
 
-    try {
-      setAuthBusy(true);
-      setAuthDebugText(null);
-      const path = authMode === 'signup' ? '/auth/signup' : '/auth/login';
-      const response = await apiRequest<AuthResponse>(path, {
-        method: 'POST',
-        body: { loginId, password },
-      });
+    const timeout = setTimeout(() => {
+      const result = performAiTurn(round, score);
+      setScore(result.nextScore);
+      setRound(result.nextRound);
+    }, aiTurnDelayMs);
 
-      await persistSession({ token: response.token, user: response.user });
-      clearAuthForm();
-      setErrorText(null);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Authentication failed.';
-      const debugMessage =
-        error instanceof ApiError
-          ? 'mode=' + authMode + ' status=' + error.status + ' path=' + (error.details?.path ?? 'unknown') + ' baseUrl=' + (error.details?.baseUrl ?? apiConfig.baseUrl) + ' message=' + message
-          : 'mode=' + authMode + ' baseUrl=' + apiConfig.baseUrl + ' message=' + message;
-      setAuthDebugText(debugMessage);
-      Alert.alert(authMode === 'signup' ? 'Signup failed' : 'Login failed', message);
-    } finally {
-      setAuthBusy(false);
-    }
-  };
+    return () => clearTimeout(timeout);
+  }, [gameOver, round, score, sessionUser]);
 
-  const logout = async () => {
-    setBetSlipsOpen(false);
-    await persistSession(null);
-  };
-
-  const generateSignupCredentials = () => {
+  const handleGenerateCredentials = () => {
     const generated = createGeneratedCredentials();
-    const credentialText = [
-      'GMBL login credentials',
-      '',
-      'login_id: ' + generated.loginId,
-      'password: ' + generated.password,
-      '',
-      'api_url: ' + apiConfig.baseUrl,
-    ].join('\n');
-    const downloaded = downloadTextFile(generated.loginId + '.txt', credentialText);
-
     setAuthMode('signup');
     setLoginId(generated.loginId);
     setPassword(generated.password);
-
-    Alert.alert(
-      'Credentials generated',
-      downloaded
-        ? 'Signup fields were filled and a text file was downloaded.'
-        : 'Signup fields were filled. Save these credentials before creating the account.',
-    );
+    setAuthError(null);
   };
 
-  const uploadLoginFile = async () => {
-    try {
-      const content = await readCredentialFile();
-      const parsed = parseCredentialText(content);
-
-      if (!parsed.loginId || !parsed.password) {
-        throw new Error('The file is missing login_id or password.');
-      }
-
-      setAuthMode('login');
-      setLoginId(parsed.loginId);
-      setPassword(parsed.password);
-
-      Alert.alert('Credentials loaded', 'Login details were loaded from the file.');
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Failed to load credentials.';
-
-      if (message === 'No file selected.') {
-        return;
-      }
-
-      Alert.alert('Upload failed', message);
-    }
-  };
-
-  const placeBet = async (option: BetOption, choiceKey: BetChoiceKey) => {
-    if (!session) {
-      Alert.alert('Login required', 'Create an account or log in before placing a bet.');
+  const handleAuthSubmit = async () => {
+    if (!loginId.trim() || !password) {
+      setAuthError('Enter login id and password.');
       return;
     }
 
-    const amount = Number(betAmount);
-    if (!Number.isFinite(amount) || amount <= 0) {
-      Alert.alert('Invalid bet', 'Enter a positive number before placing a bet.');
-      return;
-    }
+    setAuthSubmitting(true);
+    setAuthError(null);
 
     try {
-      const choice = option[choiceKey];
-      setSubmittingBetId(option.id + ':' + choiceKey);
-      const response = await apiRequest<BetResponse>('/bets', {
+      const payload = await apiRequest<AuthResponse>(authMode === 'login' ? '/auth/login' : '/auth/signup', {
         method: 'POST',
-        token: session.token,
         body: {
-          marketSlug: option.marketSlug,
-          side: choice.apiSide,
-          amount,
+          loginId: loginId.trim().toLowerCase(),
+          password,
         },
       });
 
-      const nextSession = {
-        token: session.token,
-        user: {
-          ...session.user,
-          balance: response.balance,
-        },
-      };
-
-      setSession(nextSession);
-      setMarkets((currentMarkets) => {
-        const updatedMarkets = currentMarkets.map((market) => (market.slug === response.market.slug ? response.market : market));
-        const betMarketIndex = updatedMarkets.findIndex((market) => market.slug === response.market.slug);
-
-        if (betMarketIndex === -1) {
-          return updatedMarkets;
-        }
-
-        const nextMarkets = updatedMarkets.slice();
-        const [betMarket] = nextMarkets.splice(betMarketIndex, 1);
-        nextMarkets.push(betMarket);
-        return nextMarkets;
-      });
-      const placedBetId = option.id + ':' + choiceKey;
-      setCelebratingBetId(placedBetId);
-      setTimeout(() => {
-        setCelebratingBetId((current) => (current === placedBetId ? null : current));
-      }, 700);
-      setCurrentIndex((index) => (index >= betCards.length - 1 ? 0 : index));
-      setBetSlips((currentSlips) => [response.bet, ...currentSlips].slice(0, 50));
-      await sessionStorage.setItem(sessionKey, JSON.stringify(nextSession));
-      setErrorText(null);
-      Alert.alert('Bet placed', option[choiceKey].label + ' for ' + amount.toFixed(2));
+      await writeSessionToken(payload.token);
+      setSessionToken(payload.token);
+      setSessionUser(payload.user);
+      setLoginId(payload.user.loginId);
+      setPassword('');
+      setRound(createRound());
+      setScore(initialScore);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Bet placement failed.';
-
-      if (error instanceof ApiError && error.status === 401) {
-        await persistSession(null);
-      }
-
-      if (message.toLowerCase().includes('insufficient balance')) {
-        setBalanceAlertTick((tick) => tick + 1);
-      }
-
-      Alert.alert('Bet failed', message);
+      setAuthError(authErrorText(error));
     } finally {
-      setSubmittingBetId(null);
+      setAuthSubmitting(false);
+      setAuthLoading(false);
     }
   };
 
-  if (session) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <StatusBar style="light" />
-        <View style={styles.feedScreen}>
-          <View style={styles.feedHeader}>
-            <AccountCard
-              authBusy={authBusy}
-              authMode={authMode}
-              loginId={loginId}
-              onChangeLoginId={setLoginId}
-              onChangePassword={setPassword}
-              onGenerateCredentials={generateSignupCredentials}
-              onLoginMode={() => setAuthMode('login')}
-              onLogout={logout}
-              onSignupMode={() => setAuthMode('signup')}
-              onSubmit={submitAuth}
-              onToggleBetSlips={() => setBetSlipsOpen((open) => !open)}
-              onUploadLoginFile={uploadLoginFile}
-              password={password}
-              session={session}
-              sessionLoading={sessionLoading}
-              betSlipCount={betSlips.length}
-              betSlipsOpen={betSlipsOpen}
-              balanceAlertTick={balanceAlertTick}
-            />
-            <ViewModeToggle view={marketView} onChangeView={setMarketView} />
-            {marketView === 'swipe' ? <SwipeIndicator currentIndex={currentIndex} total={betCards.length} /> : null}
-          </View>
-          {betSlipsOpen ? <BetSlipsPanel slips={betSlips} markets={markets} loading={betSlipsLoading} /> : null}
-          {marketsLoading ? (
-            <View style={styles.loadingWrap}>
-              <ActivityIndicator size="small" color="#f97316" />
-            </View>
-          ) : betCards.length ? (
-            marketView === 'swipe' ? (
-              <BetSwiper
-                bets={betCards}
-                betAmount={betAmount}
-                cardHeight={cardHeight}
-                currentIndex={currentIndex}
-                celebratingBetId={celebratingBetId}
-                onChangeBetAmount={setBetAmount}
-                onIndexChange={setCurrentIndex}
-                onPlaceBet={placeBet}
-                submittingBetId={submittingBetId}
-              />
-            ) : (
-              <MarketBoard
-                bets={betCards}
-                betAmount={betAmount}
-                celebratingBetId={celebratingBetId}
-                externalOdds={externalOdds}
-                externalOddsLoading={externalOddsLoading}
-                onChangeBetAmount={setBetAmount}
-                onPlaceBet={placeBet}
-                submittingBetId={submittingBetId}
-              />
-            )
-          ) : (
-            <View style={styles.warningCard}>
-              <Text style={styles.warningTitle}>No Markets</Text>
-              <Text style={styles.warningText}>No betting markets are available from the server.</Text>
-            </View>
-          )}
-          {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
-          {errorText ? <WarningCard errorText={errorText} /> : null}
-        </View>
-      </SafeAreaView>
-    );
-  }
+  const handleLogout = async () => {
+    await clearSessionToken();
+    setSessionToken(null);
+    setSessionUser(null);
+    setPassword('');
+    setAuthError(null);
+    setRound(createRound());
+    setScore(initialScore);
+  };
+
+  const handleRaise = (bid: number) => {
+    setRound((current) => ({
+      ...current,
+      currentBid: bid,
+      lastBidder: 'player',
+      lastRaiser: 'player',
+      turn: 'ai1',
+      statusText: 'You raise to ' + bid + '.',
+      awardTo: null,
+    }));
+  };
+
+  const handleCall = () => {
+    const resolved = resolveRound(round, 'player', round.lastBidder);
+    setScore((current) => ({
+      ...current,
+      [resolved.loser]: Math.max(0, current[resolved.loser] - 1),
+    }));
+    setRound(resolved.nextRound);
+  };
+
+  const handleNextRound = () => {
+    if (gameOver) {
+      setScore(initialScore);
+    }
+
+    setRound(createRound());
+  };
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
-      <ScrollView
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        endFillColor="#07111d"
-        alwaysBounceVertical={false}
-      >
-        <AuthHeroCard
-          authBusy={authBusy}
-          authMode={authMode}
-          loginId={loginId}
-          onChangeLoginId={setLoginId}
-          onChangePassword={setPassword}
-          onGenerateCredentials={generateSignupCredentials}
-          onLoginMode={() => setAuthMode('login')}
-          onSignupMode={() => setAuthMode('signup')}
-          onSubmit={submitAuth}
-          onUploadLoginFile={uploadLoginFile}
-          password={password}
-          sessionLoading={sessionLoading}
+      <View style={styles.gameScreen}>
+        {sessionUser ? <TopHud loginId={sessionUser.loginId} balance={sessionUser.balance} onLogout={handleLogout} /> : null}
+        <TableCard
+          score={score}
+          cards={round.cards}
+          currentBid={round.currentBid}
+          turn={round.turn}
+          statusText={gameOver ? (score.player <= 0 ? 'You are out. Deal again.' : 'All AI are out. Deal again.') : round.statusText}
+          revealPlayerCard={showReveal}
+          awardTo={showReveal ? round.awardTo : null}
+          lastRaiser={round.lastRaiser}
         />
-        {authDebugText ? <WarningCard errorText={authDebugText} /> : null}
-        {errorText ? <WarningCard errorText={errorText} /> : null}
-      </ScrollView>
+        {sessionUser ? (
+          <ActionBar
+            disabled={disabled}
+            showNextRound={showReveal}
+            nextBids={bidChoices}
+            onRaise={handleRaise}
+            onCall={handleCall}
+            onNextRound={handleNextRound}
+          />
+        ) : null}
+        {!sessionUser && !authLoading ? (
+          <AuthPanel
+            mode={authMode}
+            loginId={loginId}
+            password={password}
+            loading={authSubmitting}
+            error={authError}
+            onChangeMode={setAuthMode}
+            onChangeLoginId={setLoginId}
+            onChangePassword={setPassword}
+            onGenerateCredentials={handleGenerateCredentials}
+            onSubmit={handleAuthSubmit}
+          />
+        ) : null}
+      </View>
     </SafeAreaView>
   );
 }
