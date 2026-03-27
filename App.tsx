@@ -39,7 +39,7 @@ type MeResponse = {
 };
 
 const averageUnknown = 4;
-const aiTurnDelayMs = 850;
+const turnDurationMs = 3200;
 const initialScore: ScoreState = { ai1: startingLives, ai2: startingLives, ai3: startingLives, player: startingLives };
 
 const pickCards = (): CardMap => {
@@ -150,16 +150,20 @@ export default function App() {
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
-  const [sessionToken, setSessionToken] = useState<string | null>(null);
   const [sessionUser, setSessionUser] = useState<SessionUser | null>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [turnStartedAt, setTurnStartedAt] = useState(() => Date.now());
+  const [now, setNow] = useState(() => Date.now());
 
   const gameOver = score.player <= 0 || allAiDefeated(score);
   const showReveal = round.revealCards || gameOver;
   const disabled = round.turn !== 'player' || showReveal;
   const bidChoices = useMemo(() => nextBidChoices(round.currentBid), [round.currentBid]);
+  const elapsedMs = showReveal ? turnDurationMs : Math.min(turnDurationMs, Math.max(0, now - turnStartedAt));
+  const timeRemainingMs = Math.max(0, turnDurationMs - elapsedMs);
+  const turnProgress = timeRemainingMs / turnDurationMs;
 
   useEffect(() => {
     let cancelled = false;
@@ -175,13 +179,11 @@ export default function App() {
         const payload = await apiRequest<MeResponse>('/me', { token: savedToken });
 
         if (!cancelled) {
-          setSessionToken(savedToken);
           setSessionUser(payload.user);
         }
       } catch {
         await clearSessionToken();
         if (!cancelled) {
-          setSessionToken(null);
           setSessionUser(null);
         }
       } finally {
@@ -199,18 +201,45 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    if (round.revealCards || gameOver || round.turn === 'player' || !sessionUser) {
+    setTurnStartedAt(Date.now());
+    setNow(Date.now());
+  }, [round.turn, round.revealCards, round.currentBid]);
+
+  useEffect(() => {
+    if (showReveal || !sessionUser) {
+      return;
+    }
+
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 120);
+
+    return () => clearInterval(interval);
+  }, [sessionUser, showReveal, round.turn, round.currentBid]);
+
+  useEffect(() => {
+    if (!sessionUser || round.revealCards || gameOver) {
       return;
     }
 
     const timeout = setTimeout(() => {
+      if (round.turn === 'player') {
+        const resolved = resolveRound(round, 'player', round.lastBidder);
+        setScore((current) => ({
+          ...current,
+          [resolved.loser]: Math.max(0, current[resolved.loser] - 1),
+        }));
+        setRound(resolved.nextRound);
+        return;
+      }
+
       const result = performAiTurn(round, score);
       setScore(result.nextScore);
       setRound(result.nextRound);
-    }, aiTurnDelayMs);
+    }, timeRemainingMs);
 
     return () => clearTimeout(timeout);
-  }, [gameOver, round, score, sessionUser]);
+  }, [gameOver, round, score, sessionUser, timeRemainingMs]);
 
   const handleGenerateCredentials = () => {
     const generated = createGeneratedCredentials();
@@ -239,7 +268,6 @@ export default function App() {
       });
 
       await writeSessionToken(payload.token);
-      setSessionToken(payload.token);
       setSessionUser(payload.user);
       setLoginId(payload.user.loginId);
       setPassword('');
@@ -255,7 +283,6 @@ export default function App() {
 
   const handleLogout = async () => {
     await clearSessionToken();
-    setSessionToken(null);
     setSessionUser(null);
     setPassword('');
     setAuthError(null);
@@ -306,6 +333,7 @@ export default function App() {
           revealPlayerCard={showReveal}
           awardTo={showReveal ? round.awardTo : null}
           lastRaiser={round.lastRaiser}
+          turnProgress={turnProgress}
         />
         {sessionUser ? (
           <ActionBar

@@ -19,7 +19,7 @@ function LifeTrack({ count, tone }: { count: number; tone: 'player' | 'ai' }) {
 
 function CardVisual({ label, value, hidden, angle }: { label: string; value: number; hidden: boolean; angle: string }) {
   return (
-    <View style={[styles.gameCard, hidden ? styles.gameCardBack : styles.gameCardFront, { transform: [{ rotate: angle }] }]}> 
+    <View style={[styles.gameCard, hidden ? styles.gameCardBack : styles.gameCardFront, { transform: [{ rotate: angle }] }]}>
       <Text style={[styles.gameCardCorner, hidden ? styles.gameCardBackText : styles.gameCardFrontText]}>{hidden ? 'COYOTE' : label}</Text>
       <Text style={[styles.gameCardCenter, hidden ? styles.gameCardBackText : styles.gameCardFrontText]}>{hidden ? '?' : label}</Text>
       <Text style={[styles.gameCardValue, hidden ? styles.gameCardBackText : styles.gameCardFrontSubtext]}>{hidden ? 'Hidden' : (value >= 0 ? '+' : '') + String(value)}</Text>
@@ -110,6 +110,29 @@ function PotStack({ bid, awardTo, statusText }: { bid: number; awardTo: RoundAct
         <Text style={styles.centerPotTurn}>{statusText}</Text>
       </View>
     </Animated.View>
+  );
+}
+
+function TurnTimer({ actor, progress }: { actor: RoundActor; progress: number }) {
+  const style = actor === 'player' ? styles.playerTimer : actor === 'ai1' ? styles.aiTopTimer : actor === 'ai2' ? styles.aiLeftTimer : styles.aiRightTimer;
+  const clamped = Math.max(0, Math.min(1, progress));
+  const rotation = String(Math.round((1 - clamped) * 360)) + 'deg';
+
+  return (
+    <View style={[styles.turnTimer, style]} pointerEvents="none">
+      <View style={styles.turnTimerCrown} />
+      <View style={styles.turnTimerButton} />
+      <View style={styles.turnTimerShell}>
+        <View style={styles.turnTimerInner}>
+          <View style={styles.turnTimerTickTop} />
+          <View style={styles.turnTimerTickRight} />
+          <View style={styles.turnTimerTickBottom} />
+          <View style={styles.turnTimerTickLeft} />
+          <View style={[styles.turnTimerSweep, { transform: [{ rotate: rotation }] }]} />
+          <View style={styles.turnTimerHub} />
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -249,6 +272,7 @@ export function TableCard({
   revealPlayerCard,
   awardTo,
   lastRaiser,
+  turnProgress,
 }: {
   score: ScoreState;
   cards: CardMap;
@@ -258,6 +282,7 @@ export function TableCard({
   revealPlayerCard: boolean;
   awardTo: RoundActor | null;
   lastRaiser: RoundActor | null;
+  turnProgress: number;
 }) {
   const turnText = awardTo ? 'Pot moving' : turn === 'player' ? 'Your move' : turn.toUpperCase() + ' thinking';
 
@@ -273,6 +298,7 @@ export function TableCard({
         <Seat label="AI3" lives={score.ai3} tone="ai" cardLabel={cards.ai3.label} cardValue={cards.ai3.value} hidden={false} angle="9deg" style={styles.aiRightSeat} />
         <Seat label="YOU" lives={score.player} tone="player" cardLabel={cards.player.label} cardValue={cards.player.value} hidden={!revealPlayerCard} angle="6deg" style={styles.playerSeat} />
 
+        {!awardTo ? <TurnTimer actor={turn} progress={turnProgress} /> : null}
         <BetTravel actor={lastRaiser} bid={currentBid} />
         <PotStack bid={currentBid} awardTo={awardTo} statusText={awardTo ? statusText : turnText} />
       </View>
@@ -310,12 +336,16 @@ export function ActionBar({
       <View style={styles.raiseRow}>
         {nextBids.map((bid) => (
           <Pressable key={bid} style={[styles.raiseChip, disabled ? styles.disabledAction : null]} disabled={disabled} onPress={() => onRaise(bid)}>
+            <Text style={styles.raiseChipLabel}>Bid</Text>
             <Text style={styles.raiseChipValue}>{bid}</Text>
           </Pressable>
         ))}
       </View>
       <Pressable style={[styles.coyoteButton, disabled ? styles.disabledAction : null]} disabled={disabled} onPress={onCall}>
-        <Text style={styles.coyoteButtonText}>COYOTE</Text>
+        <Text style={styles.coyoteButtonEyebrow}>Bluff Break</Text>
+        <View style={styles.coyoteButtonPlate}>
+          <Text style={styles.coyoteButtonText}>DUMBSTOP</Text>
+        </View>
       </Pressable>
     </View>
   );
