@@ -9,7 +9,7 @@ export type RoundActor = 'ai1' | 'ai2' | 'ai3' | 'player';
 export type ScoreState = Record<RoundActor, number>;
 export type CardMap = Record<RoundActor, CoyoteCard>;
 
-export const actorOrder: RoundActor[] = ['ai1', 'ai2', 'ai3', 'player'];
+export const actorOrder: RoundActor[] = ['ai1', 'ai2', 'player', 'ai3'];
 export const aiActors: RoundActor[] = ['ai1', 'ai2', 'ai3'];
 export const startingLives = 3;
 

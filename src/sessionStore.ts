@@ -2,6 +2,7 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 const tokenKey = 'gmbl-session-token';
+const withdrawWalletKey = 'gmbl-withdraw-wallet';
 
 export const readSessionToken = async () => {
   if (Platform.OS === 'web') {
@@ -31,4 +32,23 @@ export const clearSessionToken = async () => {
   }
 
   await SecureStore.deleteItemAsync(tokenKey);
+};
+
+export const readWithdrawWallet = async () => {
+  if (Platform.OS === 'web') {
+    return typeof localStorage === 'undefined' ? null : localStorage.getItem(withdrawWalletKey);
+  }
+
+  return SecureStore.getItemAsync(withdrawWalletKey);
+};
+
+export const writeWithdrawWallet = async (wallet: string) => {
+  if (Platform.OS === 'web') {
+    if (typeof localStorage !== 'undefined') {
+      localStorage.setItem(withdrawWalletKey, wallet);
+    }
+    return;
+  }
+
+  await SecureStore.setItemAsync(withdrawWalletKey, wallet);
 };

@@ -1,8 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { Animated, Pressable, Text, TextInput, View } from 'react-native';
+import { Animated, Pressable, Text, TextInput, View, type DimensionValue } from 'react-native';
 
 import { styles } from './appStyles';
 import { type CardMap, type RoundActor, type ScoreState } from './appTypes';
+import { WalletBackgroundCoin, WalletCoin } from './walletCoin';
 
 type AuthMode = 'login' | 'signup';
 
@@ -114,12 +115,24 @@ function PotStack({ bid, awardTo, statusText }: { bid: number; awardTo: RoundAct
 }
 
 function TurnTimer({ actor, progress }: { actor: RoundActor; progress: number }) {
-  const style = actor === 'player' ? styles.playerTimer : actor === 'ai1' ? styles.aiTopTimer : actor === 'ai2' ? styles.aiLeftTimer : styles.aiRightTimer;
+  const position = useRef(new Animated.ValueXY(actor === 'ai1' ? { x: 0, y: -170 } : actor === 'ai2' ? { x: -138, y: -6 } : actor === 'ai3' ? { x: 138, y: -6 } : { x: 0, y: 170 })).current;
+
+  useEffect(() => {
+    const target = actor === 'ai1' ? { x: 0, y: -170 } : actor === 'ai2' ? { x: -138, y: -6 } : actor === 'ai3' ? { x: 138, y: -6 } : { x: 0, y: 170 };
+
+    Animated.spring(position, {
+      toValue: target,
+      tension: 120,
+      friction: 14,
+      useNativeDriver: true,
+    }).start();
+  }, [actor, position]);
+
   const clamped = Math.max(0, Math.min(1, progress));
   const rotation = String(Math.round((1 - clamped) * 360)) + 'deg';
 
   return (
-    <View style={[styles.turnTimer, style]} pointerEvents="none">
+    <Animated.View style={[styles.turnTimer, { transform: [{ translateX: position.x }, { translateY: position.y }] }]} pointerEvents="none">
       <View style={styles.turnTimerCrown} />
       <View style={styles.turnTimerButton} />
       <View style={styles.turnTimerShell}>
@@ -132,7 +145,7 @@ function TurnTimer({ actor, progress }: { actor: RoundActor; progress: number })
           <View style={styles.turnTimerHub} />
         </View>
       </View>
-    </View>
+    </Animated.View>
   );
 }
 
@@ -167,20 +180,57 @@ function Seat({
   );
 }
 
-export function TopHud({ loginId, balance, onLogout }: { loginId: string; balance: number; onLogout: () => void }) {
+const walletSpreadSlots = [
+  { left: '7%', top: '8%', rotate: '-12deg' },
+  { left: '38%', top: '4%', rotate: '8deg' },
+  { left: '66%', top: '14%', rotate: '-6deg' },
+  { left: '14%', top: '42%', rotate: '10deg' },
+  { left: '48%', top: '36%', rotate: '-10deg' },
+  { left: '70%', top: '54%', rotate: '7deg' },
+] satisfies Array<{ left: DimensionValue; top: DimensionValue; rotate: string }>;
+
+const walletBackgroundCoins = [
+  { left: '4%', top: '16%', rotate: '-18deg', size: 92, label: '$' },
+  { left: '70%', top: '18%', rotate: '14deg', size: 76, label: 'G' },
+  { left: '18%', top: '48%', rotate: '-10deg', size: 86, label: '$' },
+  { left: '76%', top: '56%', rotate: '10deg', size: 98, label: 'W' },
+  { left: '42%', top: '70%', rotate: '-16deg', size: 80, label: '$' },
+] satisfies Array<{ left: DimensionValue; top: DimensionValue; rotate: string; size: number; label: string }>;
+
+const mockWalletActivity = [
+  { id: 'mock-deposit-1', kind: 'Deposit', amount: '+$120.00', meta: 'USDC top-up 5 min ago' },
+  { id: 'mock-withdraw-1', kind: 'Withdraw', amount: '-$35.00', meta: 'Sent to saved wallet 1 hr ago' },
+  { id: 'mock-deposit-2', kind: 'Deposit', amount: '+$60.00', meta: 'Promo credit yesterday' },
+];
+
+export function TopHud({
+  loginId,
+  balance,
+  walletOpen,
+  onWalletPress,
+  onLogout,
+}: {
+  loginId: string;
+  balance: number;
+  walletOpen: boolean;
+  onWalletPress: () => void;
+  onLogout: () => void;
+}) {
   return (
     <View style={styles.topHud}>
-      <View style={styles.topHudBadge}>
-        <Text style={styles.topHudLabel}>Player</Text>
-        <Text style={styles.topHudValue}>@{loginId}</Text>
+      <View style={styles.topHudRow}>
+        <View style={styles.topHudBadge}>
+          <Text style={styles.topHudLabel}>Player</Text>
+          <Text style={styles.topHudValue}>@{loginId}</Text>
+        </View>
+        <Pressable style={[styles.topHudBadge, walletOpen ? styles.topHudBadgeActive : null]} onPress={onWalletPress}>
+          <Text style={styles.topHudLabel}>Wallet</Text>
+          <Text style={styles.topHudValue}>${balance.toFixed(2)}</Text>
+        </Pressable>
+        <Pressable style={styles.topHudLogout} onPress={onLogout}>
+          <Text style={styles.topHudLogoutText}>Log Out</Text>
+        </Pressable>
       </View>
-      <View style={styles.topHudBadge}>
-        <Text style={styles.topHudLabel}>Wallet</Text>
-        <Text style={styles.topHudValue}>${balance.toFixed(2)}</Text>
-      </View>
-      <Pressable style={styles.topHudLogout} onPress={onLogout}>
-        <Text style={styles.topHudLogoutText}>Log Out</Text>
-      </Pressable>
     </View>
   );
 }
@@ -304,6 +354,200 @@ export function TableCard({
         {!awardTo ? <TurnTimer actor={turn} progress={turnProgress} /> : null}
         <BetTravel actor={lastRaiser} bid={currentBid} />
         <PotStack bid={currentBid} awardTo={awardTo} statusText={awardTo ? statusText : ''} />
+      </View>
+    </View>
+  );
+}
+
+export function WalletPanel({
+  balance,
+  holdings,
+  loading,
+  view,
+  withdrawAddress,
+  withdrawAddressDraft,
+  withdrawEditing,
+  onChangeWithdrawAddress,
+  onShowHoldings,
+  onCopyAddress,
+  onSaveWithdrawWallet,
+  onEditWithdrawWallet,
+  onSubmitWithdraw,
+  onDeposit,
+  onWithdraw,
+}: {
+  balance: number;
+  holdings: Array<{
+    id: string;
+    marketSlug: string;
+    side: 'yes' | 'no';
+    amount: number;
+    odds: number;
+    createdAt: string;
+  }>;
+  loading: boolean;
+  view: 'holdings' | 'deposit' | 'withdraw';
+  withdrawAddress: string;
+  withdrawAddressDraft: string;
+  withdrawEditing: boolean;
+  onChangeWithdrawAddress: (value: string) => void;
+  onShowHoldings: () => void;
+  onCopyAddress: () => void;
+  onSaveWithdrawWallet: () => void;
+  onEditWithdrawWallet: () => void;
+  onSubmitWithdraw: () => void;
+  onDeposit: () => void;
+  onWithdraw: () => void;
+}) {
+  return (
+    <View style={styles.walletPanelShell}>
+      <View style={styles.walletPanelGlow} />
+      <View style={styles.walletPanel}>
+        <View pointerEvents="none" style={styles.walletBackgroundSpread}>
+          {walletBackgroundCoins.map((coin, index) => (
+            <View
+              key={String(index)}
+              style={[
+                styles.walletBackgroundSpreadCoin,
+                {
+                  left: coin.left,
+                  top: coin.top,
+                  transform: [{ rotate: coin.rotate }],
+                },
+              ]}
+            >
+              <WalletBackgroundCoin size={coin.size} label={coin.label} />
+            </View>
+          ))}
+        </View>
+        <View style={styles.walletPanelHeader}>
+          <View>
+            <Text style={styles.walletPanelEyebrow}>
+              {view === 'deposit' ? 'Deposit Instructions' : view === 'withdraw' ? 'Withdraw Instructions' : 'Wallet Holdings'}
+            </Text>
+            <Text style={styles.walletPanelBalance}>${balance.toFixed(2)}</Text>
+          </View>
+          <View style={styles.walletPanelActions}>
+            <Pressable style={styles.walletActionButton} onPress={onDeposit}>
+              <Text style={styles.walletActionButtonText}>Deposit</Text>
+            </Pressable>
+            <Pressable style={[styles.walletActionButton, styles.walletActionButtonSecondary]} onPress={onWithdraw}>
+              <Text style={styles.walletActionButtonText}>Withdraw</Text>
+            </Pressable>
+          </View>
+        </View>
+
+        {view === 'deposit' ? (
+          <View style={styles.walletInstructionPanel}>
+            <Text style={styles.walletInstructionTitle}>How To Deposit</Text>
+            <Text style={styles.walletInstructionBody}>1. Copy the Solana address below and send funds through your supported cashier flow.</Text>
+            <Text style={styles.walletInstructionBody}>2. After payment is confirmed, your wallet balance will update here.</Text>
+            <Text style={styles.walletInstructionBody}>3. If the credit does not appear, contact support with your player id and transfer receipt.</Text>
+            <View style={styles.walletInstructionCode}>
+              <Text style={styles.walletInstructionCodeLabel}>Solana Address</Text>
+              <Text style={styles.walletInstructionCodeValue}>9xQeWvG816bUx9EPjHmaT23yvVMu6KfP9U9x7wG5x9hV</Text>
+            </View>
+            <Pressable style={styles.walletCopyButton} onPress={onCopyAddress}>
+              <Text style={styles.walletCopyButtonText}>Copy Address</Text>
+            </Pressable>
+            <Pressable style={styles.walletSecondaryButton} onPress={onShowHoldings}>
+              <Text style={styles.walletSecondaryButtonText}>Back To Wallet</Text>
+            </Pressable>
+          </View>
+        ) : view === 'withdraw' ? (
+          <View style={styles.walletInstructionPanel}>
+            <Text style={styles.walletInstructionTitle}>How To Withdraw</Text>
+            <Text style={styles.walletInstructionBody}>1. Paste your Solana wallet address in the box below.</Text>
+            <Text style={styles.walletInstructionBody}>2. Review the destination carefully before submitting any cashout request.</Text>
+            <Text style={styles.walletInstructionBody}>3. Once approved, funds will be sent to the saved address shown here.</Text>
+            {withdrawEditing ? (
+              <View style={styles.walletInputGroup}>
+                <Text style={styles.walletInstructionCodeLabel}>Destination Wallet</Text>
+                <TextInput
+                  value={withdrawAddressDraft}
+                  onChangeText={onChangeWithdrawAddress}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholder="Paste Solana wallet address"
+                  placeholderTextColor="#8fb8a6"
+                  style={styles.walletAddressInput}
+                />
+              </View>
+            ) : (
+              <View style={styles.walletInstructionCode}>
+                <Text style={styles.walletInstructionCodeLabel}>Saved Wallet</Text>
+                <Text style={styles.walletInstructionCodeValue}>{withdrawAddress}</Text>
+              </View>
+            )}
+            {withdrawEditing ? (
+              <Pressable style={styles.walletCopyButton} onPress={onSaveWithdrawWallet}>
+                <Text style={styles.walletCopyButtonText}>Save Wallet</Text>
+              </Pressable>
+            ) : (
+              <View style={styles.walletWithdrawActionRow}>
+                <Pressable style={[styles.walletRowButton, styles.walletRowButtonPrimary]} onPress={onSubmitWithdraw}>
+                  <Text style={styles.walletCopyButtonText}>Withdraw</Text>
+                </Pressable>
+                <Pressable style={[styles.walletRowButton, styles.walletRowButtonSecondary]} onPress={onEditWithdrawWallet}>
+                  <Text style={styles.walletSecondaryButtonText}>Edit Wallet</Text>
+                </Pressable>
+              </View>
+            )}
+            <Pressable style={styles.walletSecondaryButton} onPress={onShowHoldings}>
+              <Text style={styles.walletSecondaryButtonText}>Back To Wallet</Text>
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.walletHoldingsView}>
+            <View style={styles.walletSpread}>
+              <View style={styles.walletSpreadRing} />
+              {loading ? <Text style={styles.walletEmptyState}>Loading holdings...</Text> : null}
+              {!loading && holdings.length === 0 ? <Text style={styles.walletEmptyState}>No wallet holdings yet.</Text> : null}
+              {!loading
+                ? holdings.slice(0, 6).map((holding, index) => {
+                    const slot = walletSpreadSlots[index % walletSpreadSlots.length];
+
+                    return (
+                      <View
+                        key={holding.id}
+                        style={[
+                          styles.walletSpreadCoinGroup,
+                          {
+                            left: slot.left,
+                            top: slot.top,
+                            transform: [{ rotate: slot.rotate }],
+                          },
+                        ]}
+                      >
+                        <WalletCoin side={holding.side} />
+                        <View style={styles.walletSpreadMeta}>
+                          <Text numberOfLines={1} style={styles.walletSpreadMarket}>
+                            {holding.marketSlug}
+                          </Text>
+                          <Text style={styles.walletSpreadAmount}>${holding.amount.toFixed(2)} stake</Text>
+                          <Text style={styles.walletSpreadReturn}>${(holding.amount * holding.odds).toFixed(2)} return</Text>
+                        </View>
+                      </View>
+                    );
+                  })
+                : null}
+            </View>
+            <View style={styles.walletActivityPanel}>
+              <Text style={styles.walletActivityTitle}>Mock Activity</Text>
+              {mockWalletActivity.map((entry) => (
+                <View key={entry.id} style={styles.walletActivityRow}>
+                  <View style={styles.walletActivityTextBlock}>
+                    <Text style={styles.walletActivityKind}>{entry.kind}</Text>
+                    <Text style={styles.walletActivityMeta}>{entry.meta}</Text>
+                  </View>
+                  <Text style={[styles.walletActivityAmount, entry.kind === 'Deposit' ? styles.walletActivityAmountPositive : styles.walletActivityAmountNegative]}>
+                    {entry.amount}
+                  </Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        )}
       </View>
     </View>
   );

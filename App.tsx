@@ -1,13 +1,14 @@
 import { StatusBar } from 'expo-status-bar';
+import * as Clipboard from 'expo-clipboard';
 import { useEffect, useMemo, useState } from 'react';
-import { SafeAreaView, View } from 'react-native';
+import { Alert, SafeAreaView, View } from 'react-native';
 
 import { apiRequest, ApiError } from './src/api';
-import { ActionBar, AuthPanel, TableCard, TopHud } from './src/appComponents';
+import { ActionBar, AuthPanel, TableCard, TopHud, WalletPanel } from './src/appComponents';
 import { styles } from './src/appStyles';
 import { actorOrder, aiActors, coyoteDeck, startingLives, type CardMap, type RoundActor, type ScoreState } from './src/appTypes';
 import { createGeneratedCredentials } from './src/credentials';
-import { clearSessionToken, readSessionToken, writeSessionToken } from './src/sessionStore';
+import { clearSessionToken, readSessionToken, readWithdrawWallet, writeSessionToken, writeWithdrawWallet } from './src/sessionStore';
 
 type RoundState = {
   cards: CardMap;
@@ -37,6 +38,21 @@ type AuthResponse = {
 type MeResponse = {
   user: SessionUser;
 };
+
+type UserBet = {
+  id: string;
+  marketSlug: string;
+  side: 'yes' | 'no';
+  amount: number;
+  odds: number;
+  createdAt: string;
+};
+
+type BetsResponse = {
+  bets: UserBet[];
+};
+
+type WalletView = 'holdings' | 'deposit' | 'withdraw';
 
 const averageUnknown = 4;
 const turnDurationMs = 3200;
@@ -103,9 +119,11 @@ const resolveRound = (current: RoundState, caller: RoundActor, bidder: RoundActo
 const performAiTurn = (current: RoundState, score: ScoreState) => {
   const actor = current.turn;
   const visibleTotal = sumVisibleForActor(current.cards, actor);
-  const threshold = visibleTotal + averageUnknown + (current.cards[actor].value >= 7 ? 1 : 0);
+  const riskBuffer = score[actor] > 1 ? 4 : 2;
+  const threshold = visibleTotal + averageUnknown + riskBuffer + (current.cards[actor].value >= 7 ? 1 : 0);
+  const softCap = visibleTotal + averageUnknown + 2;
 
-  if (current.currentBid >= threshold) {
+  if (current.currentBid > threshold && current.currentBid > softCap + 1) {
     const resolved = resolveRound(current, actor, current.lastBidder);
     return {
       nextScore: {
@@ -116,7 +134,9 @@ const performAiTurn = (current: RoundState, score: ScoreState) => {
     };
   }
 
-  const raisedBid = Math.max(current.currentBid + 1, Math.min(current.currentBid + 2, threshold));
+  const raisedBid = current.currentBid < softCap
+    ? current.currentBid + 2
+    : Math.max(current.currentBid + 1, Math.min(current.currentBid + 2, threshold));
 
   return {
     nextScore: score,
@@ -154,6 +174,14 @@ export default function App() {
   const [authLoading, setAuthLoading] = useState(true);
   const [authSubmitting, setAuthSubmitting] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  const [walletOpen, setWalletOpen] = useState(false);
+  const [walletView, setWalletView] = useState<WalletView>('holdings');
+  const [walletLoading, setWalletLoading] = useState(false);
+  const [walletHoldings, setWalletHoldings] = useState<UserBet[]>([]);
+  const [withdrawAddress, setWithdrawAddress] = useState('');
+  const [withdrawAddressDraft, setWithdrawAddressDraft] = useState('');
+  const [withdrawEditing, setWithdrawEditing] = useState(true);
+  const [nextRoundCountdown, setNextRoundCountdown] = useState<number | null>(null);
   const [turnStartedAt, setTurnStartedAt] = useState(() => Date.now());
   const [now, setNow] = useState(() => Date.now());
 
@@ -201,6 +229,26 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const restoreWithdrawWallet = async () => {
+      const savedWallet = (await readWithdrawWallet())?.trim() ?? '';
+
+      if (!cancelled) {
+        setWithdrawAddress(savedWallet);
+        setWithdrawAddressDraft(savedWallet);
+        setWithdrawEditing(savedWallet.length === 0);
+      }
+    };
+
+    restoreWithdrawWallet();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     setTurnStartedAt(Date.now());
     setNow(Date.now());
   }, [round.turn, round.revealCards, round.currentBid]);
@@ -240,6 +288,36 @@ export default function App() {
 
     return () => clearTimeout(timeout);
   }, [gameOver, round, score, sessionUser, timeRemainingMs]);
+
+  useEffect(() => {
+    if (!sessionUser || walletOpen || !showReveal) {
+      setNextRoundCountdown(null);
+      return;
+    }
+
+    setNextRoundCountdown(3);
+
+    const interval = setInterval(() => {
+      setNextRoundCountdown((current) => {
+        if (current === null) {
+          return null;
+        }
+
+        if (current <= 1) {
+          clearInterval(interval);
+          if (gameOver) {
+            setScore(initialScore);
+          }
+          setRound(createRound());
+          return null;
+        }
+
+        return current - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [gameOver, sessionUser, showReveal, walletOpen]);
 
   const handleGenerateCredentials = () => {
     const generated = createGeneratedCredentials();
@@ -284,10 +362,94 @@ export default function App() {
   const handleLogout = async () => {
     await clearSessionToken();
     setSessionUser(null);
+    setWalletOpen(false);
+    setWalletView('holdings');
+    setWalletHoldings([]);
     setPassword('');
     setAuthError(null);
     setRound(createRound());
     setScore(initialScore);
+  };
+
+  const loadWalletHoldings = async (userToken: string) => {
+    setWalletLoading(true);
+
+    try {
+      const payload = await apiRequest<BetsResponse>('/bets/me', { token: userToken });
+      setWalletHoldings(payload.bets);
+    } catch {
+      setWalletHoldings([]);
+    } finally {
+      setWalletLoading(false);
+    }
+  };
+
+  const handleWalletPress = async () => {
+    if (walletOpen) {
+      setWalletOpen(false);
+      setWalletView('holdings');
+      return;
+    }
+
+    const savedToken = await readSessionToken();
+    if (savedToken) {
+      await loadWalletHoldings(savedToken);
+    } else {
+      setWalletHoldings([]);
+    }
+
+    setWalletOpen(true);
+    setWalletView('holdings');
+  };
+
+  const handleDepositPress = () => {
+    setWalletView('deposit');
+  };
+
+  const handleWithdrawPress = () => {
+    setWalletView('withdraw');
+  };
+
+  const handleSaveWithdrawWallet = async () => {
+    const nextWallet = withdrawAddressDraft.trim();
+
+    if (!nextWallet) {
+      Alert.alert('Wallet Required', 'Paste a wallet address first.');
+      return;
+    }
+
+    await writeWithdrawWallet(nextWallet);
+    setWithdrawAddress(nextWallet);
+    setWithdrawAddressDraft(nextWallet);
+    setWithdrawEditing(false);
+    Alert.alert('Saved', 'Withdraw wallet saved.');
+  };
+
+  const handleEditWithdrawWallet = () => {
+    setWithdrawEditing(true);
+  };
+
+  const handleWithdrawRequest = async () => {
+    const destination = withdrawEditing ? withdrawAddressDraft.trim() : withdrawAddress.trim();
+
+    if (!destination) {
+      Alert.alert('Wallet Required', 'Paste and save a wallet address first.');
+      return;
+    }
+
+    if (withdrawEditing || destination !== withdrawAddress) {
+      await writeWithdrawWallet(destination);
+      setWithdrawAddress(destination);
+      setWithdrawAddressDraft(destination);
+      setWithdrawEditing(false);
+    }
+
+    Alert.alert('Withdraw Requested', 'Withdraw flow is not connected yet.');
+  };
+
+  const handleCopyDepositAddress = async () => {
+    await Clipboard.setStringAsync('9xQeWvG816bUx9EPjHmaT23yvVMu6KfP9U9x7wG5x9hV');
+    Alert.alert('Copied', 'Solana wallet address copied.');
   };
 
   const handleRaise = (bid: number) => {
@@ -311,38 +473,64 @@ export default function App() {
     setRound(resolved.nextRound);
   };
 
-  const handleNextRound = () => {
-    if (gameOver) {
-      setScore(initialScore);
-    }
-
-    setRound(createRound());
-  };
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar style="light" />
       <View style={styles.gameScreen}>
-        {sessionUser ? <TopHud loginId={sessionUser.loginId} balance={sessionUser.balance} onLogout={handleLogout} /> : null}
-        <TableCard
-          score={score}
-          cards={round.cards}
-          currentBid={round.currentBid}
-          turn={round.turn}
-          statusText={gameOver ? (score.player <= 0 ? 'You are out. Deal again.' : 'All AI are out. Deal again.') : round.statusText}
-          revealPlayerCard={showReveal}
-          awardTo={showReveal ? round.awardTo : null}
-          lastRaiser={round.lastRaiser}
-          turnProgress={turnProgress}
-        />
         {sessionUser ? (
+          <TopHud
+            loginId={sessionUser.loginId}
+            balance={sessionUser.balance}
+            walletOpen={walletOpen}
+            onWalletPress={handleWalletPress}
+            onLogout={handleLogout}
+          />
+        ) : null}
+        {walletOpen && sessionUser ? (
+          <WalletPanel
+            balance={sessionUser.balance}
+            holdings={walletHoldings}
+            loading={walletLoading}
+            view={walletView}
+            withdrawAddress={withdrawAddress}
+            withdrawAddressDraft={withdrawAddressDraft}
+            withdrawEditing={withdrawEditing}
+            onChangeWithdrawAddress={setWithdrawAddressDraft}
+            onShowHoldings={() => setWalletView('holdings')}
+            onCopyAddress={handleCopyDepositAddress}
+            onSaveWithdrawWallet={handleSaveWithdrawWallet}
+            onEditWithdrawWallet={handleEditWithdrawWallet}
+            onSubmitWithdraw={handleWithdrawRequest}
+            onDeposit={handleDepositPress}
+            onWithdraw={handleWithdrawPress}
+          />
+        ) : (
+          <TableCard
+            score={score}
+            cards={round.cards}
+            currentBid={round.currentBid}
+            turn={round.turn}
+            statusText={
+              showReveal && nextRoundCountdown !== null
+                ? `Next round in ${nextRoundCountdown}... Go`
+                : gameOver
+                  ? (score.player <= 0 ? 'You are out. Resetting table.' : 'All AI are out. Resetting table.')
+                  : round.statusText
+            }
+            revealPlayerCard={showReveal}
+            awardTo={showReveal ? round.awardTo : null}
+            lastRaiser={round.lastRaiser}
+            turnProgress={turnProgress}
+          />
+        )}
+        {sessionUser && !walletOpen && !showReveal ? (
           <ActionBar
             disabled={disabled}
-            showNextRound={showReveal}
+            showNextRound={false}
             nextBids={bidChoices}
             onRaise={handleRaise}
             onCall={handleCall}
-            onNextRound={handleNextRound}
+            onNextRound={() => {}}
           />
         ) : null}
         {!sessionUser && !authLoading ? (
