@@ -167,6 +167,8 @@ const authErrorText = (error: unknown) => {
 export default function App() {
   const [score, setScore] = useState<ScoreState>(initialScore);
   const [round, setRound] = useState<RoundState>(() => createRound());
+  const [dealSequence, setDealSequence] = useState(0);
+  const [dealing, setDealing] = useState(true);
   const [authMode, setAuthMode] = useState<AuthMode>('login');
   const [loginId, setLoginId] = useState('');
   const [password, setPassword] = useState('');
@@ -187,7 +189,7 @@ export default function App() {
 
   const gameOver = score.player <= 0 || allAiDefeated(score);
   const showReveal = round.revealCards || gameOver;
-  const disabled = round.turn !== 'player' || showReveal;
+  const disabled = round.turn !== 'player' || showReveal || dealing;
   const bidChoices = useMemo(() => nextBidChoices(round.currentBid), [round.currentBid]);
   const elapsedMs = showReveal ? turnDurationMs : Math.min(turnDurationMs, Math.max(0, now - turnStartedAt));
   const timeRemainingMs = Math.max(0, turnDurationMs - elapsedMs);
@@ -251,10 +253,24 @@ export default function App() {
   useEffect(() => {
     setTurnStartedAt(Date.now());
     setNow(Date.now());
-  }, [round.turn, round.revealCards, round.currentBid]);
+  }, [round.turn, round.revealCards, round.currentBid, dealSequence]);
 
   useEffect(() => {
-    if (showReveal || !sessionUser) {
+    if (!sessionUser || showReveal) {
+      setDealing(false);
+      return;
+    }
+
+    setDealing(true);
+    const timeout = setTimeout(() => {
+      setDealing(false);
+    }, 760);
+
+    return () => clearTimeout(timeout);
+  }, [dealSequence, sessionUser, showReveal]);
+
+  useEffect(() => {
+    if (showReveal || !sessionUser || dealing) {
       return;
     }
 
@@ -263,10 +279,10 @@ export default function App() {
     }, 120);
 
     return () => clearInterval(interval);
-  }, [sessionUser, showReveal, round.turn, round.currentBid]);
+  }, [dealing, sessionUser, showReveal, round.turn, round.currentBid]);
 
   useEffect(() => {
-    if (!sessionUser || round.revealCards || gameOver) {
+    if (!sessionUser || round.revealCards || gameOver || dealing) {
       return;
     }
 
@@ -287,7 +303,7 @@ export default function App() {
     }, timeRemainingMs);
 
     return () => clearTimeout(timeout);
-  }, [gameOver, round, score, sessionUser, timeRemainingMs]);
+  }, [dealing, gameOver, round, score, sessionUser, timeRemainingMs]);
 
   useEffect(() => {
     if (!sessionUser || walletOpen || !showReveal) {
@@ -309,6 +325,7 @@ export default function App() {
             setScore(initialScore);
           }
           setRound(createRound());
+          setDealSequence((value) => value + 1);
           return null;
         }
 
@@ -350,6 +367,7 @@ export default function App() {
       setLoginId(payload.user.loginId);
       setPassword('');
       setRound(createRound());
+      setDealSequence((value) => value + 1);
       setScore(initialScore);
     } catch (error) {
       setAuthError(authErrorText(error));
@@ -458,7 +476,7 @@ export default function App() {
       currentBid: bid,
       lastBidder: 'player',
       lastRaiser: 'player',
-      turn: 'ai1',
+      turn: nextActor('player'),
       statusText: 'You raise to ' + bid + '.',
       awardTo: null,
     }));
@@ -521,6 +539,8 @@ export default function App() {
             awardTo={showReveal ? round.awardTo : null}
             lastRaiser={round.lastRaiser}
             turnProgress={turnProgress}
+            dealing={dealing}
+            dealSequence={dealSequence}
           />
         )}
         {sessionUser && !walletOpen && !showReveal ? (

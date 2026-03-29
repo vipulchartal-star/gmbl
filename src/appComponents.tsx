@@ -28,6 +28,75 @@ function CardVisual({ label, value, hidden, angle }: { label: string; value: num
   );
 }
 
+function CardPlaceholder({ angle }: { angle: string }) {
+  return <View style={[styles.gameCard, styles.gameCardPlaceholder, { transform: [{ rotate: angle }] }]} />;
+}
+
+function DealBurst({ dealSequence }: { dealSequence: number }) {
+  const progress = useRef([
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+    new Animated.Value(0),
+  ]).current;
+
+  useEffect(() => {
+    progress.forEach((value) => {
+      value.stopAnimation();
+      value.setValue(0);
+    });
+
+    Animated.stagger(
+      110,
+      progress.map((value) =>
+        Animated.timing(value, {
+          toValue: 1,
+          duration: 320,
+          useNativeDriver: true,
+        }),
+      ),
+    ).start();
+  }, [dealSequence, progress]);
+
+  const targets = [
+    { x: 0, y: -170, rotate: '-8deg' },
+    { x: -172, y: -4, rotate: '-14deg' },
+    { x: 0, y: 170, rotate: '8deg' },
+    { x: 172, y: -4, rotate: '14deg' },
+  ];
+
+  return (
+    <View style={styles.dealBurstLayer} pointerEvents="none">
+      {progress.map((value, index) => {
+        const target = targets[index];
+        const translateX = value.interpolate({ inputRange: [0, 1], outputRange: [0, target.x] });
+        const translateY = value.interpolate({ inputRange: [0, 1], outputRange: [0, target.y] });
+        const scale = value.interpolate({ inputRange: [0, 0.55, 1], outputRange: [0.55, 1.05, 1] });
+        const opacity = value.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 1, 0] });
+
+        return (
+          <Animated.View
+            key={String(index)}
+            style={[
+              styles.dealCard,
+              {
+                opacity,
+                transform: [{ translateX }, { translateY }, { rotate: target.rotate }, { scale }],
+              },
+            ]}
+          >
+            <View style={[styles.gameCard, styles.gameCardBack, styles.dealCardFace]}>
+              <Text style={[styles.gameCardCorner, styles.gameCardBackText]}>COYOTE</Text>
+              <Text style={[styles.gameCardCenter, styles.gameCardBackText]}>?</Text>
+              <Text style={[styles.gameCardValue, styles.gameCardBackText]}>Deal</Text>
+            </View>
+          </Animated.View>
+        );
+      })}
+    </View>
+  );
+}
+
 function CoinStack({ bid }: { bid: number }) {
   const stackCount = Math.max(3, Math.min(8, Math.ceil(bid / 4)));
 
@@ -115,10 +184,10 @@ function PotStack({ bid, awardTo, statusText }: { bid: number; awardTo: RoundAct
 }
 
 function TurnTimer({ actor, progress }: { actor: RoundActor; progress: number }) {
-  const position = useRef(new Animated.ValueXY(actor === 'ai1' ? { x: 0, y: -170 } : actor === 'ai2' ? { x: -138, y: -6 } : actor === 'ai3' ? { x: 138, y: -6 } : { x: 0, y: 170 })).current;
+  const position = useRef(new Animated.ValueXY(actor === 'ai1' ? { x: 88, y: -190 } : actor === 'ai2' ? { x: -168, y: -4 } : actor === 'ai3' ? { x: 168, y: -4 } : { x: 0, y: 194 })).current;
 
   useEffect(() => {
-    const target = actor === 'ai1' ? { x: 0, y: -170 } : actor === 'ai2' ? { x: -138, y: -6 } : actor === 'ai3' ? { x: 138, y: -6 } : { x: 0, y: 170 };
+    const target = actor === 'ai1' ? { x: 88, y: -190 } : actor === 'ai2' ? { x: -168, y: -4 } : actor === 'ai3' ? { x: 168, y: -4 } : { x: 0, y: 194 };
 
     Animated.spring(position, {
       toValue: target,
@@ -159,6 +228,7 @@ function Seat({
   angle,
   style,
   activeText,
+  dealing,
 }: {
   label: string;
   lives: number;
@@ -169,12 +239,13 @@ function Seat({
   angle: string;
   style: object;
   activeText?: string | null;
+  dealing?: boolean;
 }) {
   return (
     <View style={style}>
       <Text style={styles.seatLabel}>{label}</Text>
       <LifeTrack count={lives} tone={tone} />
-      <CardVisual label={cardLabel} value={cardValue} hidden={hidden} angle={angle} />
+      {dealing ? <CardPlaceholder angle={angle} /> : <CardVisual label={cardLabel} value={cardValue} hidden={hidden} angle={angle} />}
       {activeText ? <Text style={styles.seatStatus}>{activeText}</Text> : null}
     </View>
   );
@@ -326,6 +397,8 @@ export function TableCard({
   awardTo,
   lastRaiser,
   turnProgress,
+  dealing,
+  dealSequence,
 }: {
   score: ScoreState;
   cards: CardMap;
@@ -336,6 +409,8 @@ export function TableCard({
   awardTo: RoundActor | null;
   lastRaiser: RoundActor | null;
   turnProgress: number;
+  dealing: boolean;
+  dealSequence: number;
 }) {
   const turnText = turn === 'player' ? 'Your move' : turn.toUpperCase() + ' thinking';
 
@@ -346,14 +421,15 @@ export function TableCard({
         <View style={styles.tableRail} />
         <View style={styles.tableInnerRing} />
 
-        <Seat label="AI1" lives={score.ai1} tone="ai" cardLabel={cards.ai1.label} cardValue={cards.ai1.value} hidden={false} angle="-4deg" style={styles.aiTopSeat} activeText={!awardTo && turn === 'ai1' ? turnText : null} />
-        <Seat label="AI2" lives={score.ai2} tone="ai" cardLabel={cards.ai2.label} cardValue={cards.ai2.value} hidden={false} angle="-9deg" style={styles.aiLeftSeat} activeText={!awardTo && turn === 'ai2' ? turnText : null} />
-        <Seat label="AI3" lives={score.ai3} tone="ai" cardLabel={cards.ai3.label} cardValue={cards.ai3.value} hidden={false} angle="9deg" style={styles.aiRightSeat} activeText={!awardTo && turn === 'ai3' ? turnText : null} />
-        <Seat label="YOU" lives={score.player} tone="player" cardLabel={cards.player.label} cardValue={cards.player.value} hidden={!revealPlayerCard} angle="6deg" style={styles.playerSeat} activeText={!awardTo && turn === 'player' ? turnText : null} />
+        <Seat label="AI1" lives={score.ai1} tone="ai" cardLabel={cards.ai1.label} cardValue={cards.ai1.value} hidden={false} angle="-4deg" style={styles.aiTopSeat} activeText={!awardTo && turn === 'ai1' ? turnText : null} dealing={dealing} />
+        <Seat label="AI2" lives={score.ai2} tone="ai" cardLabel={cards.ai2.label} cardValue={cards.ai2.value} hidden={false} angle="-9deg" style={styles.aiLeftSeat} activeText={!awardTo && turn === 'ai2' ? turnText : null} dealing={dealing} />
+        <Seat label="AI3" lives={score.ai3} tone="ai" cardLabel={cards.ai3.label} cardValue={cards.ai3.value} hidden={false} angle="9deg" style={styles.aiRightSeat} activeText={!awardTo && turn === 'ai3' ? turnText : null} dealing={dealing} />
+        <Seat label="YOU" lives={score.player} tone="player" cardLabel={cards.player.label} cardValue={cards.player.value} hidden={!revealPlayerCard} angle="6deg" style={styles.playerSeat} activeText={!awardTo && turn === 'player' ? turnText : null} dealing={dealing} />
 
-        {!awardTo ? <TurnTimer actor={turn} progress={turnProgress} /> : null}
+        {!awardTo && !dealing ? <TurnTimer actor={turn} progress={turnProgress} /> : null}
         <BetTravel actor={lastRaiser} bid={currentBid} />
         <PotStack bid={currentBid} awardTo={awardTo} statusText={awardTo ? statusText : ''} />
+        {dealing ? <DealBurst dealSequence={dealSequence} /> : null}
       </View>
     </View>
   );

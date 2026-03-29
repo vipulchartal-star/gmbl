@@ -258,6 +258,27 @@ export const styles = StyleSheet.create({
     height: 8,
     width: 8,
   },
+  dealBurstLayer: {
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+    right: 0,
+    top: 0,
+    zIndex: 6,
+  },
+  dealCard: {
+    left: '50%',
+    marginLeft: -44,
+    marginTop: -59,
+    position: 'absolute',
+    top: '50%',
+  },
+  dealCardFace: {
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.24,
+    shadowRadius: 10,
+  },
   centerArena: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -349,6 +370,12 @@ export const styles = StyleSheet.create({
   gameCardBack: {
     backgroundColor: '#6a261f',
     borderColor: '#e1b989',
+    borderWidth: 2,
+  },
+  gameCardPlaceholder: {
+    backgroundColor: 'rgba(18, 12, 10, 0.18)',
+    borderColor: 'rgba(255, 243, 214, 0.12)',
+    borderStyle: 'dashed',
     borderWidth: 2,
   },
   gameCardCorner: {
