@@ -75,6 +75,7 @@ const sumAllCards = (cards: CardMap) => actorOrder.reduce((total, actor) => tota
 const nextActor = (actor: RoundActor) => actorOrder[(actorOrder.indexOf(actor) + 1) % actorOrder.length];
 const nextBidChoices = (currentBid: number) => Array.from({ length: 4 }, (_, index) => currentBid + index + 1);
 const allAiDefeated = (score: ScoreState) => aiActors.every((actor) => score[actor] <= 0);
+const actorName = (actor: RoundActor) => (actor === 'player' ? 'You' : actor.toUpperCase());
 
 const openingBidForAi1 = (cards: CardMap) => {
   const visibleTotal = sumVisibleForActor(cards, 'ai1');
@@ -101,14 +102,17 @@ const resolveRound = (current: RoundState, caller: RoundActor, bidder: RoundActo
   const bidWasTooHigh = current.currentBid > total;
   const loser = bidWasTooHigh ? bidder : caller;
   const winner = bidWasTooHigh ? caller : bidder;
-  const winnerText = winner === 'player' ? 'You take the pot.' : winner.toUpperCase() + ' takes the pot.';
+  const winnerText = actorName(winner) + ' win' + (winner === 'player' ? '' : 's') + '.';
+  const reasonText = bidWasTooHigh
+    ? actorName(caller) + ' called correctly. Bid ' + current.currentBid + ' was too high, total was ' + total + '.'
+    : actorName(caller) + ' called wrong. Bid ' + current.currentBid + ' was valid, total was ' + total + '.';
 
   return {
     loser,
     nextRound: {
       ...current,
       turn: 'player' as RoundActor,
-      statusText: winnerText + ' Total was ' + total + '.',
+      statusText: winnerText + ' ' + reasonText,
       revealCards: true,
       awardTo: winner,
       lastRaiser: null,
