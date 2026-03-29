@@ -346,6 +346,67 @@ app.get('/me', requireAuth, async (req, res) => {
   });
 });
 
+app.get('/leaderboard', requireAuth, async (req, res) => {
+  const currentUserResult = await pool.query(
+    'select id, login_id, username, balance, created_at from app_users where id = $1',
+    [req.auth.sub],
+  );
+  const currentUser = currentUserResult.rows[0];
+
+  if (!currentUser) {
+    res.status(404).json({ error: 'User not found.' });
+    return;
+  }
+
+  const leadersResult = await pool.query(
+    `with ranked as (
+       select
+         id,
+         login_id,
+         username,
+         balance,
+         created_at,
+         row_number() over (order by balance desc, created_at asc, id asc) as rank
+       from app_users
+     )
+     select id, login_id, username, balance, created_at, rank
+     from ranked
+     order by rank asc
+     limit 10`,
+  );
+
+  const currentRankResult = await pool.query(
+    `with ranked as (
+       select
+         id,
+         login_id,
+         username,
+         balance,
+         created_at,
+         row_number() over (order by balance desc, created_at asc, id asc) as rank
+       from app_users
+     )
+     select id, login_id, username, balance, created_at, rank
+     from ranked
+     where id = $1`,
+    [req.auth.sub],
+  );
+
+  const serializeRankedUser = (row) => ({
+    id: row.id,
+    loginId: row.login_id,
+    username: row.username,
+    balance: Number(row.balance),
+    createdAt: row.created_at,
+    rank: Number(row.rank),
+  });
+
+  res.json({
+    leaders: leadersResult.rows.map(serializeRankedUser),
+    currentPlayer: currentRankResult.rows[0] ? serializeRankedUser(currentRankResult.rows[0]) : null,
+  });
+});
+
 app.get('/admin/markets', requireAdmin, async (_req, res) => {
   const markets = await withTransaction((client) => ensureConfiguredMarkets(client));
   res.json({

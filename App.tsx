@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Alert, SafeAreaView, View } from 'react-native';
 
 import { apiRequest, ApiError } from './src/api';
-import { ActionBar, AuthPanel, TableCard, TopHud, WalletPanel } from './src/appComponents';
+import { ActionBar, AuthPanel, LeaderboardPanel, TableCard, TopHud, WalletPanel } from './src/appComponents';
 import { styles } from './src/appStyles';
 import { actorOrder, aiActors, coyoteDeck, startingLives, type CardMap, type RoundActor, type ScoreState } from './src/appTypes';
 import { createGeneratedCredentials } from './src/credentials';
@@ -50,6 +50,20 @@ type UserBet = {
 
 type BetsResponse = {
   bets: UserBet[];
+};
+
+type LeaderboardEntry = {
+  id: string;
+  loginId: string;
+  username: string;
+  balance: number;
+  createdAt: string;
+  rank: number;
+};
+
+type LeaderboardResponse = {
+  leaders: LeaderboardEntry[];
+  currentPlayer: LeaderboardEntry | null;
 };
 
 type WalletView = 'holdings' | 'deposit' | 'withdraw';
@@ -102,17 +116,16 @@ const resolveRound = (current: RoundState, caller: RoundActor, bidder: RoundActo
   const bidWasTooHigh = current.currentBid > total;
   const loser = bidWasTooHigh ? bidder : caller;
   const winner = bidWasTooHigh ? caller : bidder;
-  const winnerText = actorName(winner) + ' win' + (winner === 'player' ? '' : 's') + '.';
   const reasonText = bidWasTooHigh
-    ? actorName(caller) + ' called correctly. Bid ' + current.currentBid + ' was too high, total was ' + total + '.'
-    : actorName(caller) + ' called wrong. Bid ' + current.currentBid + ' was valid, total was ' + total + '.';
+    ? actorName(caller) + ' was right. Bid ' + current.currentBid + ' was too high. Total ' + total + '.'
+    : actorName(caller) + ' was wrong. Bid ' + current.currentBid + ' was valid. Total ' + total + '.';
 
   return {
     loser,
     nextRound: {
       ...current,
       turn: 'player' as RoundActor,
-      statusText: winnerText + ' ' + reasonText,
+      statusText: reasonText,
       revealCards: true,
       awardTo: winner,
       lastRaiser: null,
@@ -184,6 +197,11 @@ export default function App() {
   const [walletView, setWalletView] = useState<WalletView>('holdings');
   const [walletLoading, setWalletLoading] = useState(false);
   const [walletHoldings, setWalletHoldings] = useState<UserBet[]>([]);
+  const [leaderboardOpen, setLeaderboardOpen] = useState(false);
+  const [leaderboardLoading, setLeaderboardLoading] = useState(false);
+  const [leaderboardEntries, setLeaderboardEntries] = useState<LeaderboardEntry[]>([]);
+  const [leaderboardCurrentPlayer, setLeaderboardCurrentPlayer] = useState<LeaderboardEntry | null>(null);
+  const [leaderboardError, setLeaderboardError] = useState<string | null>(null);
   const [withdrawAddress, setWithdrawAddress] = useState('');
   const [withdrawAddressDraft, setWithdrawAddressDraft] = useState('');
   const [withdrawEditing, setWithdrawEditing] = useState(true);
@@ -385,8 +403,12 @@ export default function App() {
     await clearSessionToken();
     setSessionUser(null);
     setWalletOpen(false);
+    setLeaderboardOpen(false);
     setWalletView('holdings');
     setWalletHoldings([]);
+    setLeaderboardEntries([]);
+    setLeaderboardCurrentPlayer(null);
+    setLeaderboardError(null);
     setPassword('');
     setAuthError(null);
     setRound(createRound());
@@ -406,7 +428,26 @@ export default function App() {
     }
   };
 
+  const loadLeaderboard = async (userToken: string) => {
+    setLeaderboardLoading(true);
+    setLeaderboardError(null);
+
+    try {
+      const payload = await apiRequest<LeaderboardResponse>('/leaderboard', { token: userToken });
+      setLeaderboardEntries(payload.leaders);
+      setLeaderboardCurrentPlayer(payload.currentPlayer);
+    } catch (error) {
+      setLeaderboardEntries([]);
+      setLeaderboardCurrentPlayer(null);
+      setLeaderboardError(authErrorText(error));
+    } finally {
+      setLeaderboardLoading(false);
+    }
+  };
+
   const handleWalletPress = async () => {
+    setLeaderboardOpen(false);
+
     if (walletOpen) {
       setWalletOpen(false);
       setWalletView('holdings');
@@ -422,6 +463,26 @@ export default function App() {
 
     setWalletOpen(true);
     setWalletView('holdings');
+  };
+
+  const handleLeaderboardPress = async () => {
+    setWalletOpen(false);
+
+    if (leaderboardOpen) {
+      setLeaderboardOpen(false);
+      return;
+    }
+
+    const savedToken = await readSessionToken();
+    if (savedToken) {
+      await loadLeaderboard(savedToken);
+    } else {
+      setLeaderboardEntries([]);
+      setLeaderboardCurrentPlayer(null);
+      setLeaderboardError('Login required.');
+    }
+
+    setLeaderboardOpen(true);
   };
 
   const handleDepositPress = () => {
@@ -504,11 +565,21 @@ export default function App() {
             loginId={sessionUser.loginId}
             balance={sessionUser.balance}
             walletOpen={walletOpen}
+            leaderboardOpen={leaderboardOpen}
             onWalletPress={handleWalletPress}
+            onLeaderboardPress={handleLeaderboardPress}
             onLogout={handleLogout}
           />
         ) : null}
-        {walletOpen && sessionUser ? (
+        {leaderboardOpen && sessionUser ? (
+          <LeaderboardPanel
+            entries={leaderboardEntries}
+            currentPlayer={leaderboardCurrentPlayer}
+            loading={leaderboardLoading}
+            error={leaderboardError}
+            onClose={() => setLeaderboardOpen(false)}
+          />
+        ) : walletOpen && sessionUser ? (
           <WalletPanel
             balance={sessionUser.balance}
             holdings={walletHoldings}

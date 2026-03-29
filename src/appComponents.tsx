@@ -158,26 +158,31 @@ function PotStack({ bid, awardTo, statusText }: { bid: number; awardTo: RoundAct
       return;
     }
 
-    Animated.timing(progress, {
-      toValue: 1,
-      duration: 520,
-      useNativeDriver: true,
-    }).start();
+    Animated.sequence([
+      Animated.delay(900),
+      Animated.timing(progress, {
+        toValue: 1,
+        duration: 520,
+        useNativeDriver: true,
+      }),
+    ]).start();
   }, [awardTo, bid, progress]);
 
+  const winnerText = awardTo === 'player' ? 'YOU' : awardTo?.toUpperCase() ?? String(bid);
+  const scale = progress.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1.04, 1] });
   const target = awardTo === 'player' ? { x: 0, y: 156 } : awardTo === 'ai1' ? { x: 0, y: -154 } : awardTo === 'ai2' ? { x: -158, y: 4 } : { x: 158, y: 4 };
   const translateX = progress.interpolate({ inputRange: [0, 1], outputRange: [0, target.x] });
   const translateY = progress.interpolate({ inputRange: [0, 1], outputRange: [0, target.y] });
-  const scale = progress.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1.04, 0.88] });
   const opacity = progress.interpolate({ inputRange: [0, 0.82, 1], outputRange: [1, 1, 0.08] });
+  const containerStyle = awardTo ? { transform: [{ translateX }, { translateY }, { scale }], opacity } : undefined;
 
   return (
-    <Animated.View style={[styles.centerArena, { transform: [{ translateX }, { translateY }, { scale }], opacity }]} pointerEvents="none">
+    <Animated.View style={[styles.centerArena, containerStyle]} pointerEvents="none">
       <CoinStack bid={bid} />
       <View style={styles.centerPot}>
-        <Text style={styles.centerPotLabel}>Bid</Text>
-        <Text style={styles.centerPotValue}>{bid}</Text>
-        <Text style={styles.centerPotTurn}>{statusText}</Text>
+        <Text style={styles.centerPotLabel}>{awardTo ? 'Winner' : 'Bid'}</Text>
+        <Text style={[styles.centerPotValue, awardTo ? styles.centerPotWinnerValue : null]}>{awardTo ? winnerText : bid}</Text>
+        <Text style={[styles.centerPotTurn, awardTo ? styles.centerPotResultText : null]}>{statusText}</Text>
       </View>
     </Animated.View>
   );
@@ -274,26 +279,51 @@ const mockWalletActivity = [
   { id: 'mock-deposit-2', kind: 'Deposit', amount: '+$60.00', meta: 'Promo credit yesterday' },
 ];
 
+const mockCoinGraphPoints = [
+  { x: '2%' as DimensionValue, y: '74%' as DimensionValue },
+  { x: '14%' as DimensionValue, y: '66%' as DimensionValue },
+  { x: '27%' as DimensionValue, y: '70%' as DimensionValue },
+  { x: '40%' as DimensionValue, y: '54%' as DimensionValue },
+  { x: '53%' as DimensionValue, y: '60%' as DimensionValue },
+  { x: '66%' as DimensionValue, y: '42%' as DimensionValue },
+  { x: '79%' as DimensionValue, y: '34%' as DimensionValue },
+  { x: '92%' as DimensionValue, y: '22%' as DimensionValue },
+];
+
+const mockCoinGraphSegments = [
+  { left: '6%' as DimensionValue, top: '66%' as DimensionValue, width: 40, rotate: '-18deg' },
+  { left: '18%' as DimensionValue, top: '67%' as DimensionValue, width: 42, rotate: '8deg' },
+  { left: '31%' as DimensionValue, top: '61%' as DimensionValue, width: 42, rotate: '-34deg' },
+  { left: '44%' as DimensionValue, top: '56%' as DimensionValue, width: 42, rotate: '10deg' },
+  { left: '57%' as DimensionValue, top: '49%' as DimensionValue, width: 42, rotate: '-34deg' },
+  { left: '70%' as DimensionValue, top: '38%' as DimensionValue, width: 40, rotate: '-26deg' },
+  { left: '83%' as DimensionValue, top: '28%' as DimensionValue, width: 32, rotate: '-33deg' },
+];
+
 export function TopHud({
   loginId,
   balance,
   walletOpen,
+  leaderboardOpen,
   onWalletPress,
+  onLeaderboardPress,
   onLogout,
 }: {
   loginId: string;
   balance: number;
   walletOpen: boolean;
+  leaderboardOpen: boolean;
   onWalletPress: () => void;
+  onLeaderboardPress: () => void;
   onLogout: () => void;
 }) {
   return (
     <View style={styles.topHud}>
       <View style={styles.topHudRow}>
-        <View style={styles.topHudBadge}>
+        <Pressable style={[styles.topHudBadge, leaderboardOpen ? styles.topHudBadgeActive : null]} onPress={onLeaderboardPress}>
           <Text style={styles.topHudLabel}>Player</Text>
           <Text style={styles.topHudValue}>@{loginId}</Text>
-        </View>
+        </Pressable>
         <Pressable style={[styles.topHudBadge, walletOpen ? styles.topHudBadgeActive : null]} onPress={onWalletPress}>
           <Text style={styles.topHudLabel}>Wallet</Text>
           <Text style={styles.topHudValue}>${balance.toFixed(2)}</Text>
@@ -301,6 +331,87 @@ export function TopHud({
         <Pressable style={styles.topHudLogout} onPress={onLogout}>
           <Text style={styles.topHudLogoutText}>Log Out</Text>
         </Pressable>
+      </View>
+    </View>
+  );
+}
+
+export function LeaderboardPanel({
+  entries,
+  currentPlayer,
+  loading,
+  error,
+  onClose,
+}: {
+  entries: Array<{
+    id: string;
+    loginId: string;
+    username: string;
+    balance: number;
+    createdAt: string;
+    rank: number;
+  }>;
+  currentPlayer: {
+    id: string;
+    loginId: string;
+    username: string;
+    balance: number;
+    createdAt: string;
+    rank: number;
+  } | null;
+  loading: boolean;
+  error: string | null;
+  onClose: () => void;
+}) {
+  return (
+    <View style={styles.walletPanelShell}>
+      <View style={styles.walletPanelGlow} />
+      <View style={styles.walletPanel}>
+        <View style={styles.walletPanelHeader}>
+          <View>
+            <Text style={styles.walletPanelEyebrow}>Leaderboard</Text>
+            <Text style={styles.walletPanelBalance}>Top 10 Players</Text>
+          </View>
+          <Pressable style={styles.walletActionButtonSecondary} onPress={onClose}>
+            <Text style={styles.walletActionButtonText}>Close</Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.leaderboardPanel}>
+          {loading ? <Text style={styles.walletEmptyState}>Loading leaderboard...</Text> : null}
+          {!loading && error ? <Text style={styles.leaderboardError}>{error}</Text> : null}
+          {!loading && !error
+            ? entries.map((entry) => (
+                <View key={entry.id} style={styles.leaderboardRow}>
+                  <View style={styles.leaderboardRankBadge}>
+                    <Text style={styles.leaderboardRankText}>#{entry.rank}</Text>
+                  </View>
+                  <View style={styles.leaderboardPlayerBlock}>
+                    <Text style={styles.leaderboardPlayerName}>@{entry.loginId}</Text>
+                    <Text style={styles.leaderboardPlayerMeta}>{entry.username}</Text>
+                  </View>
+                  <Text style={styles.leaderboardBalance}>${entry.balance.toFixed(2)}</Text>
+                </View>
+              ))
+            : null}
+          {!loading && !error && entries.length === 0 ? <Text style={styles.walletEmptyState}>No players found.</Text> : null}
+        </View>
+
+        {currentPlayer ? (
+          <View style={styles.leaderboardMyRank}>
+            <Text style={styles.leaderboardMyRankLabel}>Your Rank</Text>
+            <View style={styles.leaderboardRow}>
+              <View style={styles.leaderboardRankBadge}>
+                <Text style={styles.leaderboardRankText}>#{currentPlayer.rank}</Text>
+              </View>
+              <View style={styles.leaderboardPlayerBlock}>
+                <Text style={styles.leaderboardPlayerName}>@{currentPlayer.loginId}</Text>
+                <Text style={styles.leaderboardPlayerMeta}>{currentPlayer.username}</Text>
+              </View>
+              <Text style={styles.leaderboardBalance}>${currentPlayer.balance.toFixed(2)}</Text>
+            </View>
+          </View>
+        ) : null}
       </View>
     </View>
   );
@@ -575,6 +686,55 @@ export function WalletPanel({
           </View>
         ) : (
           <View style={styles.walletHoldingsView}>
+            <View style={styles.walletMarketPanel}>
+              <View style={styles.walletMarketHeader}>
+                <View>
+                  <Text style={styles.walletMarketEyebrow}>GMBL Coin</Text>
+                  <Text style={styles.walletMarketPrice}>$1.84</Text>
+                </View>
+                <View style={styles.walletMarketBadge}>
+                  <Text style={styles.walletMarketBadgeText}>+12.4%</Text>
+                </View>
+              </View>
+              <View style={styles.walletMarketGraph}>
+                <View style={styles.walletMarketGridTop} />
+                <View style={styles.walletMarketGridMid} />
+                <View style={styles.walletMarketGridBottom} />
+                {mockCoinGraphSegments.map((segment, index) => (
+                  <View
+                    key={'segment-' + String(index)}
+                    style={[
+                      styles.walletMarketLineSegment,
+                      {
+                        left: segment.left,
+                        top: segment.top,
+                        width: segment.width,
+                        transform: [{ rotate: segment.rotate }],
+                      },
+                    ]}
+                  />
+                ))}
+                {mockCoinGraphPoints.map((point, index) => (
+                  <View
+                    key={'point-' + String(index)}
+                    style={[
+                      styles.walletMarketPoint,
+                      {
+                        left: point.x,
+                        top: point.y,
+                      },
+                    ]}
+                  />
+                ))}
+                <View style={styles.walletMarketGlowDot} />
+              </View>
+              <View style={styles.walletMarketAxis}>
+                <Text style={styles.walletMarketAxisText}>1H</Text>
+                <Text style={styles.walletMarketAxisText}>6H</Text>
+                <Text style={styles.walletMarketAxisText}>24H</Text>
+                <Text style={styles.walletMarketAxisText}>7D</Text>
+              </View>
+            </View>
             <View style={styles.walletSpread}>
               <View style={styles.walletSpreadRing} />
               {loading ? <Text style={styles.walletEmptyState}>Loading holdings...</Text> : null}
